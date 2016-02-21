@@ -411,7 +411,7 @@ int binary_load_data(char *filename)
     if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
     msz=sz[0]; max_index=sz[1];
 
-    vector <float> val;
+    vector <double> val;
     vector <int>   ind;
     val.resize(max_index);
     if(max_index>0) nonsparse=1;
@@ -444,7 +444,7 @@ int binary_load_data(char *filename)
                 else
                     Y.push_back(sz[0]);
             }
-            f.read((char*)(&val[0]),max_index*sizeof(float));
+            f.read((char*)(&val[0]),max_index*sizeof(double));
             if(mwrite)
                 for(j=0;j<max_index;j++) // set features for each example
                     lasvm_sparsevector_set(v,j,val[j]);
@@ -461,7 +461,7 @@ int binary_load_data(char *filename)
             }
             val.resize(sz[1]); ind.resize(sz[1]);
             f.read((char*)(&ind[0]),sz[1]*sizeof(int));
-            f.read((char*)(&val[0]),sz[1]*sizeof(float));
+            f.read((char*)(&val[0]),sz[1]*sizeof(double));
             if(mwrite)
                 for(j=0;j<sz[1];j++) // set features for each example
                 {

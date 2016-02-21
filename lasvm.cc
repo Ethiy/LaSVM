@@ -57,7 +57,7 @@
 #endif
 
 #if defined(USE_FLOAT) && USE_FLOAT
-# define real_t float
+# define real_t double
 #else
 # define real_t double
 #endif
@@ -239,7 +239,7 @@ gs1( lasvm_t *self, int i, double epsgr)
   int l = self->s;
   real_t g;
   real_t step, ostep, curv;
-  float *row;
+  double *row;
   int *r2i;
   /* Determine coordinate to process */
   if (i < 0)
@@ -302,7 +302,7 @@ gs2( lasvm_t *self, int imin, int imax, double epsgr)
   int l = self->s;
   real_t gmin, gmax;
   real_t step, ostep, curv;
-  float *rmin, *rmax;
+  double *rmin, *rmax;
   int *r2i;
   /* Determine coordinate to process */
   if (imin < 0 || imax < 0)
@@ -420,7 +420,7 @@ lasvm_process( lasvm_t *self, int xi, double y )
 {
   int l = self->l;
   int *i2r = 0;
-  float *row = 0;
+  double *row = 0;
   real_t g;
   int j;
   /* Checks */
@@ -554,7 +554,7 @@ unshrink(lasvm_t *self)
           {
 	    int xj = r2i[j];
 	    int cached = lasvm_kcache_status_row(self->kernel, xj);
-            float *row = lasvm_kcache_query_row(self->kernel, r2i[j], l);
+            double *row = lasvm_kcache_query_row(self->kernel, r2i[j], l);
             for (i=s; i<l; i++)
               g[i] -= a * row[i];
 	    if (! cached) /* do not keep what was not cached */
@@ -627,7 +627,7 @@ double
 lasvm_predict(lasvm_t *self, int xi)
 {
   int l = self->l;
-  float *row = lasvm_kcache_query_row(self->kernel, xi, l);
+  double *row = lasvm_kcache_query_row(self->kernel, xi, l);
   real_t *alpha = self->alpha;
   real_t s = 0;
   if (self->sumflag)
@@ -695,7 +695,7 @@ void lasvm_init( lasvm_t *self, int l,
       for (i=0; i<k; i++)
         {
           real_t s = self->g[i];
-          float *row = lasvm_kcache_query_row(self->kernel, r2i[i] , k);
+          double *row = lasvm_kcache_query_row(self->kernel, r2i[i] , k);
 #if defined(USE_CBLAS) && USE_CBLAS
           s -= cblas_sdot(k, self->alpha, 1, row, 1);
 #else

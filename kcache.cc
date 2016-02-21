@@ -50,8 +50,8 @@ struct lasvm_kcache_s {
   int *r2i;
   /* Rows */
   int    *rsize;
-  float  *rdiag;
-  float **rdata;
+  double  *rdiag;
+  double **rdata;
   int    *rnext;
   int    *rprev;
   int    *qnext;
@@ -94,8 +94,8 @@ xminsize(lasvm_kcache_t *self, size_t n)
       self->rsize = static_cast<int*>(xrealloc(self->rsize, nl*sizeof(int)));
       self->qnext = static_cast<int*>(xrealloc(self->qnext, (1+nl)*sizeof(int)));
       self->qprev = static_cast<int*>(xrealloc(self->qprev, (1+nl)*sizeof(int)));
-      self->rdiag = static_cast<float*>(xrealloc(self->rdiag, nl*sizeof(float)));
-      self->rdata = static_cast<float**>(xrealloc(self->rdata, nl*sizeof(float*)));
+      self->rdiag = static_cast<double*>(xrealloc(self->rdiag, nl*sizeof(double)));
+      self->rdata = static_cast<double**>(xrealloc(self->rdata, nl*sizeof(double*)));
       self->rnext = self->qnext + 1;
       self->rprev = self->qprev + 1;
       for (i=ol; i<nl; i++)
@@ -180,16 +180,16 @@ xextend(lasvm_kcache_t *self, int k, int nlen)
   int olen = self->rsize[k];
   if (nlen > olen)
     {
-      float *ndata = static_cast<float*>(xmalloc(nlen*sizeof(float)));
+      double *ndata = static_cast<double*>(xmalloc(nlen*sizeof(double)));
       if (olen > 0)
 	{
-	  float *odata = self->rdata[k];
-	  memcpy(ndata, odata, olen * sizeof(float));
+	  double *odata = self->rdata[k];
+	  memcpy(ndata, odata, olen * sizeof(double));
 	  free(odata);
 	}
       self->rdata[k] = ndata;
       self->rsize[k] = nlen;
-      self->cursize += static_cast<size_t>(nlen - olen) * sizeof(float);
+      self->cursize += static_cast<size_t>(nlen - olen) * sizeof(double);
     }
 }
 
@@ -199,12 +199,12 @@ xtruncate(lasvm_kcache_t *self, int k, int nlen)
   int olen = self->rsize[k];
   if (nlen < olen)
     {
-      float *ndata;
-      float *odata = self->rdata[k];
+      double *ndata;
+      double *odata = self->rdata[k];
       if (nlen >  0)
 	{
-	  ndata = static_cast<float*>(xmalloc(nlen*sizeof(float)));
-	  memcpy(ndata, odata, nlen * sizeof(float));
+	  ndata = static_cast<double*>(xmalloc(nlen*sizeof(double)));
+	  memcpy(ndata, odata, nlen * sizeof(double));
 	}
       else
 	{
@@ -216,7 +216,7 @@ xtruncate(lasvm_kcache_t *self, int k, int nlen)
       free(odata);
       self->rdata[k] = ndata;
       self->rsize[k] = nlen;
-      self->cursize += static_cast<size_t>(nlen - olen) * sizeof(float);
+      self->cursize += static_cast<size_t>(nlen - olen) * sizeof(double);
     }
 }
 
@@ -229,13 +229,13 @@ xswap(lasvm_kcache_t *self, int i1, int i2, int r1, int r2)
       int nk = self->rnext[k];
       int n  = self->rsize[k];
       int rr = self->i2r[k];
-      float *d = self->rdata[k];
+      double *d = self->rdata[k];
       if (r1 < n)
 	{
 	  if (r2 < n)
 	    {
-	      float t1 = d[r1];
-	      float t2 = d[r2];
+	      double t1 = d[r1];
+	      double t2 = d[r2];
 	      d[r1] = t2;
 	      d[r2] = t1;
 	    }
@@ -335,7 +335,7 @@ xpurge(lasvm_kcache_t *self)
     }
 }
 
-float *
+double *
 lasvm_kcache_query_row(lasvm_kcache_t *self, int i, int len)
 {
   ASSERT(i>=0);
@@ -347,7 +347,7 @@ lasvm_kcache_query_row(lasvm_kcache_t *self, int i, int len)
   else
     {
       int olen, p, q;
-      float *d;
+      double *d;
       if (i >= self->l || len >= self->l)
 	xminsize(self, max(1+i,len));
       olen = self->rsize[i];

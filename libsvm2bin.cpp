@@ -16,17 +16,17 @@ vector <lasvm_sparsevector_t*> X; // feature vectors
 vector <int> Y;                   // labels
 int m;                            // number of examples
 int sparse=1;
-int	max_index = 0;
+size_t	max_index = 0;
 
 void libsvm_load_data(char *filename)
 // loads the same format as LIBSVM
 { 
     int index; double value;
     int elements, i;
-    FILE *fp = fopen(filename,"r");
+	FILE *fp;
     lasvm_sparsevector_t* v;
 
-    if(fp == NULL)
+    if(fopen_s(&fp, filename, "r") || fp == NULL)
     {
         fprintf(stderr,"Can't open input file \"%s\"\n",filename);
         exit(1);
@@ -101,7 +101,7 @@ void fullbin_save(char *fname)
     f.write((char*)sz,2*sizeof(int));
     if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
     
-    float buf[max_index+1]; 
+    std::vector<double> buf(max_index+1); 
     for(i=0;i<m;i++) 
     {
         sz[0]=Y[i];       // write label
@@ -119,7 +119,7 @@ void fullbin_save(char *fname)
             buf[p->index]=p->data;
             p = p->next; 	
         }
-        f.write((char*)buf,max_index*sizeof(float));
+        f.write(reinterpret_cast<char*>(buf.data()),max_index*sizeof(double));
     }
     f.close();
 }
@@ -137,8 +137,8 @@ void bin_save(char *fname)
     f.write((char*)sz,2*sizeof(int));
     if (!f) {printf("File writing error in line %d.\n",i); exit(1);}
 
-    float buf[max_index];
-    int   ind[max_index];
+    std::vector<double> buf(max_index);
+    std::vector<int>   ind(max_index);
 	
     for(i=0;i<m;i++)
     {   
@@ -155,8 +155,8 @@ void bin_save(char *fname)
         sz[0]=Y[i];       // write label
         sz[1]=max_index;  // write length of example (how many nonsparse entries)
         f.write((char*)sz,2*sizeof(int));
-        f.write((char*)ind,max_index*sizeof(int));   // write indices
-        f.write((char*)buf,max_index*sizeof(float)); // write values
+        f.write(reinterpret_cast<char*>(ind.data()),max_index*sizeof(int));   // write indices
+        f.write(reinterpret_cast<char*>(buf.data()),max_index*sizeof(double)); // write values
         if (!f) {printf("File writing error in line %d.\n",i); exit(1);}
     }
     f.close();
