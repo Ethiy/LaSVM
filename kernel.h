@@ -75,9 +75,9 @@ typedef struct lasvm_vectorproblem_s
 } lasvm_vectorproblem_t;
 
 
-double lasvm_vectorproblem_lin_kernel(int i, int j, void *problem);
+double lasvm_vectorproblem_lin_kernel(int i, int j, lasvm_vectorproblem_t *problem);
 
-double lasvm_vectorproblem_rbf_kernel(int i, int j, void *problem);
+double lasvm_vectorproblem_rbf_kernel(int i, int j, lasvm_vectorproblem_t *problem);
 
 
 /* ------------------------------------- */
@@ -95,9 +95,9 @@ typedef struct lasvm_sparsevectorproblem_s
 } lasvm_sparsevectorproblem_t;
 
 
-double lasvm_sparsevectorproblem_lin_kernel(int i, int j, void *problem);
+double lasvm_sparsevectorproblem_lin_kernel(int i, int j, lasvm_sparsevectorproblem_t *problem);
 
-double lasvm_sparsevectorproblem_rbf_kernel(int i, int j, void *problem);
+double lasvm_sparsevectorproblem_rbf_kernel(int i, int j, lasvm_sparsevectorproblem_t *problem);
 
 
 

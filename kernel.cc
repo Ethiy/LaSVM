@@ -44,9 +44,9 @@
 
 
 double 
-lasvm_vectorproblem_lin_kernel(int i, int j, void *problem)
+lasvm_vectorproblem_lin_kernel(int i, int j, lasvm_vectorproblem_t *problem)
 {
-  lasvm_vectorproblem_t *p = (lasvm_vectorproblem_t*)problem;
+  lasvm_vectorproblem_t *p = problem;
   ASSERT(i>=0 && i<p->l);
   ASSERT(j>=0 && j<p->l);
   return lasvm_vector_dot_product(p->x[i], p->x[j]);
@@ -54,10 +54,10 @@ lasvm_vectorproblem_lin_kernel(int i, int j, void *problem)
 
 
 double 
-lasvm_vectorproblem_rbf_kernel(int i, int j, void *problem)
+lasvm_vectorproblem_rbf_kernel(int i, int j, lasvm_vectorproblem_t *problem)
 {
   double d;
-  lasvm_vectorproblem_t *p = (lasvm_vectorproblem_t*)problem;
+  lasvm_vectorproblem_t *p = problem;
   ASSERT(i>=0 && i<p->l);
   ASSERT(j>=0 && j<p->l);
   d = lasvm_vector_dot_product(p->x[i], p->x[j]);
@@ -67,19 +67,19 @@ lasvm_vectorproblem_rbf_kernel(int i, int j, void *problem)
 
 
 double 
-lasvm_sparsevectorproblem_lin_kernel(int i, int j, void *problem)
+lasvm_sparsevectorproblem_lin_kernel(int i, int j, lasvm_sparsevectorproblem_t* problem)
 {
-  lasvm_sparsevectorproblem_t *p = (lasvm_sparsevectorproblem_t*)problem;
+  lasvm_sparsevectorproblem_t *p = problem;
   ASSERT(i>=0 && i<p->l);
   ASSERT(j>=0 && j<p->l);
   return lasvm_sparsevector_dot_product(p->x[i], p->x[j]);
 }
 
 double 
-lasvm_sparsevectorproblem_rbf_kernel(int i, int j, void *problem)
+lasvm_sparsevectorproblem_rbf_kernel(int i, int j, lasvm_sparsevectorproblem_t *problem)
 {
   double d;
-  lasvm_sparsevectorproblem_t *p = (lasvm_sparsevectorproblem_t*)problem;
+  lasvm_sparsevectorproblem_t *p = problem;
   ASSERT(i>=0 && i<p->l);
   ASSERT(j>=0 && j<p->l);
   d = lasvm_sparsevector_dot_product(p->x[i], p->x[j]);

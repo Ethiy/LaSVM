@@ -54,7 +54,7 @@ defaultproc(lasvm_message_t level, const char *fmt, va_list ap)
 }
 
 void 
-lasvm_error(const char *fmt, ...) 
+lasvm_error(const char *fmt, ...)
 { 
   lasvm_message_proc_t *f = lasvm_message_proc;
   va_list ap; 

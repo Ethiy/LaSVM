@@ -71,7 +71,8 @@ extern lasvm_message_proc_t  *lasvm_message_proc;
 /* lasvm_error, lasvm_warning, lasvm_info, lasvm_debug ---
    Convenience functions to display messages and signal errors.
 */
-extern void lasvm_error(const char *fmt, ...);
+
+[[noreturn]] extern void lasvm_error(const char *fmt, ...);
 extern void lasvm_warning(const char *fmt, ...);
 extern void lasvm_info(const char *fmt, ...);
 extern void lasvm_debug(const char *fmt, ...);
