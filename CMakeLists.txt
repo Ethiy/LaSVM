@@ -59,9 +59,19 @@ file(GLOB_RECURSE LaSVM_TOOLS_SRC
 )
 
 add_library(Tools ${LaSVM_TOOLS_HEADERS} ${LaSVM_TOOLS_SRC})
-target_link_libraries (Tools
-	m
-)
+
+if(CHECK_CXX_COMPILER_USED_TOOLS)
+
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
+  # using Visual Studio C++
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
+  # using Intel C++
+else()
+  # GCC or Clang
+	target_link_libraries (Tools
+		m
+	)
+endif(CHECK_CXX_COMPILER_USED_TOOLS)
 
 #Binaries
 # Training
@@ -75,8 +85,20 @@ file(GLOB_RECURSE LaSVM_Training_SRC
 add_executable(Training ${LaSVM_TOOLS_HEADERS} ${LaSVM_Training_HEADERS} ${LaSVM_Training_SRC})
 target_link_libraries (Training
 	Tools
-	m
 )
+
+if(CHECK_CXX_COMPILER_USED_Training)
+
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
+  # using Visual Studio C++
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
+  # using Intel C++
+else()
+  # GCC or Clang
+	target_link_libraries (Training
+		m
+	)
+endif(CHECK_CXX_COMPILER_USED_Training)
 
 # Test
 file(GLOB_RECURSE LaSVM_Test_HEADERS
@@ -89,8 +111,20 @@ file(GLOB_RECURSE LaSVM_Test_SRC
 add_executable(Test ${LaSVM_TOOLS_HEADERS} ${LaSVM_Test_HEADERS} ${LaSVM_Test_SRC})
 target_link_libraries (Test
 	Tools
-	m
 )
+
+if(CHECK_CXX_COMPILER_USED_Test)
+
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
+  # using Visual Studio C++
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
+  # using Intel C++
+else()
+  # GCC or Clang
+	target_link_libraries (Test
+		m
+	)
+endif(CHECK_CXX_COMPILER_USED_Test)
 
 # Converter LIBSVM2BIN
 file(GLOB_RECURSE LaSVM_LIBSVM2BIN_HEADERS
@@ -103,8 +137,20 @@ file(GLOB_RECURSE LaSVM_LIBSVM2BIN_SRC
 add_executable(LIBSVM2BIN ${LaSVM_TOOLS_HEADERS} ${LaSVM_LIBSVM2BIN_HEADERS} ${LaSVM_LIBSVM2BIN_SRC})
 target_link_libraries (LIBSVM2BIN
 	Tools
-	m
 )
+
+if(CHECK_CXX_COMPILER_USED_LIBSVM2BIN)
+
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
+  # using Visual Studio C++
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
+  # using Intel C++
+else()
+  # GCC or Clang
+	target_link_libraries (LIBSVM2BIN
+		m
+	)
+endif(CHECK_CXX_COMPILER_USED_LIBSVM2BIN)
 
 # Converter BIN2LIBSVM
 file(GLOB_RECURSE LaSVM_BIN2LIBSVM_HEADERS
@@ -117,5 +163,17 @@ file(GLOB_RECURSE LaSVM_BIN2LIBSVM_SRC
 add_executable(BIN2LIBSVM ${LaSVM_TOOLS_HEADERS} ${LaSVM_BIN2LIBSVM_HEADERS} ${LaSVM_BIN2LIBSVM_SRC})
 target_link_libraries (BIN2LIBSVM
 	Tools
-	m
 )
+
+if(CHECK_CXX_COMPILER_USED_BIN2LIBSVM)
+
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
+  # using Visual Studio C++
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
+  # using Intel C++
+else()
+  # GCC or Clang
+	target_link_libraries (BIN2LIBSVM
+		m
+	)
+endif(CHECK_CXX_COMPILER_USED_BIN2LIBSVM)
