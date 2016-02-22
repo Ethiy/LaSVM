@@ -23,10 +23,10 @@ void libsvm_load_data(char *filename)
 { 
     int index; double value;
     int elements, i;
-	FILE *fp;
+	FILE *fp = fopen(filename,"r");
     lasvm_sparsevector_t* v;
 
-    if(fopen_s(&fp, filename, "r") || fp == NULL)
+    if(fp == NULL)
     {
         fprintf(stderr,"Can't open input file \"%s\"\n",filename);
         exit(1);
