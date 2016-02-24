@@ -8,18 +8,19 @@ using namespace std;
 #include <cstdio>
 #include <vector>
 #include <cmath>
+#include <cfloat>
 
 #include "vector.hpp"
 
 vector <lasvm_sparsevector_t*> X; // feature vectors
 vector <int> Y;                   // labels
-size_t m;                            // number of examples
+long m;                            // number of examples
 int sparse=1;
 int max_index = 0;
 
-size_t binary_load_data(char *filename)
+long binary_load_data(char *filename)
 {
-    size_t msz,i=0,j;
+    long msz,i=0,j;
     lasvm_sparsevector_t* v;
     int nonsparse=0;
 
@@ -29,7 +30,7 @@ size_t binary_load_data(char *filename)
     // read number of examples and number of features
     int sz[2]; 
     f.read((char*)sz,2*sizeof(int));
-    if (!f) { printf("File writing error in line %zu.\n",i); exit(1);}
+    if (!f) { printf("File writing error in line %ld.\n",i); exit(1);}
     msz=sz[0]; max_index=sz[1];
 
     vector <double> val;
@@ -59,7 +60,7 @@ size_t binary_load_data(char *filename)
             f.read((char*)(&val[0]),sz[1]*sizeof(double));
             for(j=0;j<sz[1];j++) // set features for each example
             {
-                if (val[j]!=0)
+                if ( fabs(val[j])> FLT_EPSILON )
                     lasvm_sparsevector_set(v,ind[j],val[j]);
                 if(ind[j]>max_index)
                     max_index=ind[j];
@@ -69,7 +70,7 @@ size_t binary_load_data(char *filename)
     f.close();
     
     msz=X.size();
-    printf("examples: %zu   features: %d\n",msz,max_index);
+    printf("examples: %ld   features: %d\n",msz,max_index);
     
     return msz;
 }
@@ -80,16 +81,16 @@ void libsvm_save(char *fname)
     FILE *f = fopen(fname,"w"); 
     for(int i=0;i<m;i++) 
     {
-        fprintf(f,"%d", (int) Y[i]);
+        fprintf( f,"%d", static_cast<int>(Y[i]) );
         lasvm_sparsevector_pair_t *p = X[i]->pairs;
         while (p )
         { 
             if(p->index>max_index)
             {
-                printf("error! index %zu??\n",p->index); 
+                printf("error! index %ld??\n",p->index); 
                 exit(1);
             }
-            fprintf(f," %zu:%.15g", p->index, p->data);
+            fprintf(f," %ld:%.15g", p->index, p->data);
             p = p->next; 	
         } 
         fprintf(f,"\n");

@@ -14,9 +14,9 @@ using namespace std;
 
 vector <lasvm_sparsevector_t*> X; // feature vectors
 vector <int> Y;                   // labels
-size_t m;                            // number of examples
+long m;                            // number of examples
 int sparse=1;
-size_t	max_index = 0;
+long	max_index = 0;
 
 void libsvm_load_data(char *filename)
 // loads the same format as LIBSVM
@@ -97,8 +97,8 @@ void fullbin_save(char *fname)
     f.open(fname,ios::out|ios::binary);
 
     // write number of examples and number of features
-    size_t sz[2]; sz[0]=m; sz[1]=max_index;
-    f.write((char*)sz,2*sizeof(int));
+    long sz[2]; sz[0]=m; sz[1]=max_index;
+    f.write( (char*)sz ,2*sizeof(int) );
     if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
     
     std::vector<double> buf(max_index+1); 
@@ -133,12 +133,12 @@ void bin_save(char *fname)
     f.open(fname,ios::out|ios::binary);
 
     // write number of examples and a 0 to say that the matrix is sparse
-    size_t sz[2]; sz[0]=m; sz[1]=0;
+    long sz[2]; sz[0]=m; sz[1]=0;
     f.write((char*)sz,2*sizeof(int));
     if (!f) {printf("File writing error in line %d.\n",i); exit(1);}
 
     std::vector<double> buf(max_index);
-    std::vector<size_t>   ind(max_index);
+    std::vector<long>   ind(max_index);
 	
     for(i=0;i<m;i++)
     {   

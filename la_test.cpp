@@ -10,6 +10,7 @@ using namespace std;
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <cfloat>
 
 #include "vector.hpp"
 
@@ -34,7 +35,7 @@ bool operator<(const ID& x, const ID& y)
     return x.x < y.x;
 }
 
-size_t m,msv;                         // training and test set sizes
+long m,msv;                         // training and test set sizes
 vector <lasvm_sparsevector_t*> X; // feature vectors for test set
 vector <lasvm_sparsevector_t*> Xsv;// feature vectors for SVs
 vector <int> Y;                   // labels
@@ -53,7 +54,7 @@ int max_index=0;
 
 
 
-void exit_with_help()
+[[noreturn]]void exit_with_help()
 {
     fprintf(stdout,
 	    "\nUsage: la_test [options] test_set_file model_file output_file\n"
@@ -90,12 +91,12 @@ int split_file_load(char *f)
     if(!inds) return binary_file;
     while(1)
     {
-        int i,j;
+        int i,j = 0;
         int c=fscanf(fp,"%d",&i);
         if(labs) c=fscanf(fp,"%d",&j);
         if(c==-1) break;
         if (labs) 
-			splits.push_back(ID(i-1,j)); 
+			splits.push_back(ID(i-1,j));
 		else 
 			splits.push_back(ID(i-1,0));
     }
@@ -106,7 +107,7 @@ int split_file_load(char *f)
 }
 
 
-size_t libsvm_load_data(char *filename)
+long libsvm_load_data(char *filename)
 // loads the same format as LIBSVM
 {
     int index; double value;
@@ -123,7 +124,7 @@ size_t libsvm_load_data(char *filename)
         printf("loading \"%s\"..  \n",filename);
     int splitpos=0;
 
-    size_t msz = 0; 
+    long msz = 0; 
     elements = 0;
     while(1)
     {
@@ -133,7 +134,7 @@ size_t libsvm_load_data(char *filename)
         case '\n':
             if(splits.size()>0) 
             {
-                if(splitpos<(int)splits.size() && splits[splitpos].x==msz)
+                if(splitpos<static_cast<int>( splits.size() ) && splits[splitpos].x==msz)
                 {
                     v=lasvm_sparsevector_create();
                     X.push_back(v);	splitpos++;
@@ -168,7 +169,7 @@ size_t libsvm_load_data(char *filename)
         int write=0;
         if(splits.size()>0)
         {
-            if(splitpos<(int)splits.size() && splits[splitpos].x==i)
+            if(splitpos< static_cast<int>( splits.size() )  && splits[splitpos].x==i)
             {
                 write=2;splitpos++;
             }
@@ -213,16 +214,16 @@ size_t libsvm_load_data(char *filename)
     fclose(fp);
 
     msz=X.size()-m;
-    printf("examples: %zd   features: %d\n",msz,max_index);
+    printf("examples: %ld   features: %d\n",msz,max_index);
 
     return msz;
 }
 
-size_t binary_load_data(char *filename)
+long binary_load_data(char *filename)
 {
-	size_t msz;
+	long msz;
 	int	i=0,j;
-    lasvm_sparsevector_t* v;
+    lasvm_sparsevector_t* v = nullptr;
     int nonsparse=0;
 
     ifstream f;
@@ -245,7 +246,7 @@ size_t binary_load_data(char *filename)
         int mwrite=0;
         if(splits.size()>0)
         {
-            if(splitpos<(int)splits.size() && splits[splitpos].x==i) 
+            if(splitpos< static_cast<int>( splits.size() )  && splits[splitpos].x==i)
             { 
                 mwrite=1;splitpos++;
                 v=lasvm_sparsevector_create(); X.push_back(v);
@@ -297,7 +298,7 @@ size_t binary_load_data(char *filename)
     f.close();
 
     msz=X.size()-m;
-    printf("examples: %zd   features: %d\n",msz,max_index);
+    printf("examples: %ld   features: %d\n",msz,max_index);
 
     return msz;
 }
@@ -305,7 +306,7 @@ size_t binary_load_data(char *filename)
 
 void load_data_file(char *filename)
 {
-	size_t msz;
+	long msz;
 	int i, ft;
     splits.resize(0); 
 
@@ -346,8 +347,8 @@ void load_data_file(char *filename)
             x_square[i+m]=lasvm_sparsevector_dot_product(X[i+m],X[i+m]);
     }
 
-    if(kgamma==-1)
-        kgamma=1.0/ ((double) max_index); // same default as LIBSVM
+    if( fabs( kgamma +1 ) < FLT_EPSILON )
+        kgamma=1.0/ ( static_cast<double>( max_index ) ); // same default as LIBSVM
 
     m+=msz;
 }
@@ -453,7 +454,7 @@ int libsvm_load_model(const char *model_file_name)
     fscanf(fp,"%1000s",tmp); // nr_class
     fscanf(fp,"%1000s",tmp); // 2
     fscanf(fp,"%1000s",tmp); // total_sv
-    fscanf(fp,"%zd",&msv); 
+    fscanf(fp,"%ld",&msv); 
 
     fscanf(fp,"%1000s",tmp); //rho
     fscanf(fp,"%lf\n",&b0);
@@ -510,10 +511,10 @@ void test(char *output_name)
 	    y+=alpha[j]*kernel(i,j,NULL);
 	}
 	if(y>=0) y=1; else y=-1; 
-	if(((int)y)==Y[i]) acc++; 
+	if(( static_cast<int>(y) )==Y[i]) acc++;
     }
 
-    printf("accuracy= %g (%zd/%zd)\n",(acc/m)*100,((size_t)acc),m);
+    printf("accuracy= %g (%ld/%ld)\n",(acc/m)*100,( static_cast<long>( acc ) ),m);
     fclose(fp);
 }
 

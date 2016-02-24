@@ -46,9 +46,6 @@
 # define min(a,b) (((a)<(b))?(a):(b))
 #endif
 
-#ifndef max
-# define max(a,b) (((a)>(b))?(a):(b))
-#endif
 
 static void* 
 xmalloc(int n)
@@ -69,7 +66,7 @@ lasvm_vector_create(int size)
 {
   lasvm_vector_t *v;
   ASSERT(size>1);
-  v = (lasvm_vector_t*)xmalloc(sizeof(lasvm_vector_t) + (size-1)*sizeof(double));
+  v = static_cast<lasvm_vector_t*>(xmalloc(sizeof(lasvm_vector_t) + (size-1)*sizeof(double)));
   v->size = size;
   return v;
 }
@@ -102,7 +99,7 @@ lasvm_sparsevector_t *
 lasvm_sparsevector_create(void)
 {
   lasvm_sparsevector_t *v;
-  v = (lasvm_sparsevector_t*)xmalloc(sizeof(lasvm_sparsevector_t));
+  v = static_cast<lasvm_sparsevector_t*>(xmalloc(sizeof(lasvm_sparsevector_t)));
   v->size = 0;
   v->npairs = 0;
   v->pairs = 0;
@@ -146,10 +143,10 @@ lasvm_sparsevector_get(lasvm_sparsevector_t *v, int index)
 }
 
 static void 
-quickappend(lasvm_sparsevector_t *v, size_t index, double data)
+quickappend(lasvm_sparsevector_t *v, long index, double data)
 {
   lasvm_sparsevector_pair_t *d;
-  d = (lasvm_sparsevector_pair_t*)xmalloc(sizeof(lasvm_sparsevector_pair_t));
+  d = static_cast<lasvm_sparsevector_pair_t*>( xmalloc( sizeof(lasvm_sparsevector_pair_t) ) );
   ASSERT(index >= v->size);
   d->next = 0;
   d->index = index;
@@ -161,7 +158,7 @@ quickappend(lasvm_sparsevector_t *v, size_t index, double data)
 }
 
 void 
-lasvm_sparsevector_set(lasvm_sparsevector_t *v, size_t index, double data)
+lasvm_sparsevector_set(lasvm_sparsevector_t *v, long index, double data)
 {
   if (index >= v->size)
     {
@@ -181,7 +178,7 @@ lasvm_sparsevector_set(lasvm_sparsevector_t *v, size_t index, double data)
 	  p->data = data;
 	  return;
 	}
-      d = (lasvm_sparsevector_pair_t*)xmalloc(sizeof(lasvm_sparsevector_pair_t));
+      d = static_cast<lasvm_sparsevector_pair_t*>( xmalloc( sizeof(lasvm_sparsevector_pair_t) ) );
       d->next = p;
       d->index = index;
       d->data = data;
