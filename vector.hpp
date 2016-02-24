@@ -63,12 +63,12 @@ double lasvm_vector_dot_product(lasvm_vector_t *v1, lasvm_vector_t *v2);
 
 typedef struct lasvm_sparsevector_pair_s {
   struct lasvm_sparsevector_pair_s *next;
-  int    index;
+  size_t    index;
   double data;
 } lasvm_sparsevector_pair_t;
 
 typedef struct lasvm_sparsevector_s {
-  int size;
+  size_t size;
   int npairs;
   lasvm_sparsevector_pair_t *pairs;
   lasvm_sparsevector_pair_t **last;
@@ -80,7 +80,7 @@ void lasvm_sparsevector_destroy(lasvm_sparsevector_t *v);
 
 void lasvm_sparsevector_clear(lasvm_sparsevector_t *v);
 
-void lasvm_sparsevector_set(lasvm_sparsevector_t *v, int index, double data);
+void lasvm_sparsevector_set(lasvm_sparsevector_t *v, size_t index, double data);
 
 double lasvm_sparsevector_get(lasvm_sparsevector_t *v, int index);
 

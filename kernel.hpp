@@ -33,7 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "vector.h"
+#include "vector.hpp"
 
 #ifdef __cplusplus__
 extern "C" { 

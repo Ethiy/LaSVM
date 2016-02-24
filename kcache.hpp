@@ -80,7 +80,7 @@ void lasvm_kcache_destroy(lasvm_kcache_t *self);
    Argument <entries> indicates the maximum cache memory in bytes
    The default size is 256Mb.
 */
-void lasvm_kcache_set_maximum_size(lasvm_kcache_t *self, long entries);
+void lasvm_kcache_set_maximum_size(lasvm_kcache_t *self, size_t entries);
 
 /* --- lasvm_kcache_get_maximum_size
    Returns the maximum cache memory.
@@ -141,9 +141,9 @@ size_t *lasvm_kcache_r2i(lasvm_kcache_t *self, size_t n);
    or by indicating the example number (<i1>, <i2>).
 */
 
-void lasvm_kcache_swap_rr(lasvm_kcache_t *self, int r1, int r2);
-void lasvm_kcache_swap_ii(lasvm_kcache_t *self, int i1, int i2);
-void lasvm_kcache_swap_ri(lasvm_kcache_t *self, int r1, int i2);
+void lasvm_kcache_swap_rr(lasvm_kcache_t *self, size_t r1, size_t r2);
+void lasvm_kcache_swap_ii(lasvm_kcache_t *self, size_t i1, size_t i2);
+void lasvm_kcache_swap_ri(lasvm_kcache_t *self, size_t r1, size_t i2);
 
 
 #ifdef __cplusplus__

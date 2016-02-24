@@ -26,7 +26,7 @@
 #ifndef LASVM_H
 #define LASVM_H
 
-#include "kcache.h"
+#include "kcache.hpp"
 
 /* --- lasvm_t
    Opaque type representing the LASVM state. 
@@ -64,7 +64,7 @@ int lasvm_get_l( lasvm_t *self );
    Otherwise returns zero.
 */
 
-int lasvm_process( lasvm_t *self, int xi, double y );
+int lasvm_process( lasvm_t *self, size_t xi, double y );
 
 /* --- lasvm_reprocess
    Performs the REPROCESS operation with a tolerance <epsgr>
@@ -107,7 +107,7 @@ int lasvm_get_alpha(lasvm_t *self, double *alpha);
    Returns the support vector indices into array <sv>.
    Similar information can be obtained using <lasvm_kcache_r2i>.
 */
-int lasvm_get_sv(lasvm_t *self, int *sv);
+int lasvm_get_sv(lasvm_t *self, size_t *sv);
 
 /* --- lasvm_get_g
    Returns the gradient of the dual objective function
@@ -129,7 +129,7 @@ double lasvm_get_w2(lasvm_t *self);
    Computes the kernel expansion on example with index <xi>
    and returns the result.
 */
-double lasvm_predict(lasvm_t *self, int xi);
+double lasvm_predict(lasvm_t *self, size_t xi);
 
 /* --- lasvm_predict_nocache
    Same as <lasvm_predict> but does not mark the corresponding
@@ -148,8 +148,8 @@ double lasvm_predict_nocache(lasvm_t *self, int xi);
    of each example. That does not work if <alpha>
    is zero. Such support vectors are eliminated...
 */
-void lasvm_init( lasvm_t *self, int l, 
-                 const int *sv, 
+void lasvm_init( lasvm_t *self, size_t l, 
+                 const size_t *sv, 
                  const double *alpha, 
                  const double *g );
 
