@@ -6,7 +6,7 @@ using namespace std;
 #include <vector>
 #include <cmath>
 #include <ctime>
-#include <string>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
@@ -230,10 +230,10 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
     if(i>=argc)
         exit_with_help();
 
-	string(argv[i]).copy(input_file_name, strlen(argv[i]) );
+    strcpy(input_file_name, argv[i]);
 
     if(i<argc-1)
-		string(argv[i+1]).copy(model_file_name, strlen(argv[i+1]));
+        strcpy(model_file_name,argv[i+1]);
     else
     {
         char *p = strrchr(argv[i],'/');
