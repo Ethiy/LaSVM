@@ -82,8 +82,8 @@ file(GLOB_RECURSE LaSVM_Training_SRC
 	"la_svm.cpp"
 )
 
-add_executable(Training ${LaSVM_TOOLS_HEADERS} ${LaSVM_Training_HEADERS} ${LaSVM_Training_SRC})
-target_link_libraries (Training
+add_executable(la_svm ${LaSVM_TOOLS_HEADERS} ${LaSVM_Training_HEADERS} ${LaSVM_Training_SRC})
+target_link_libraries (la_svm
 	Tools
 )
 
@@ -95,7 +95,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
   # using Intel C++
 else()
   # GCC or Clang
-	target_link_libraries (Training
+	target_link_libraries (la_svm
 		m
 	)
 endif(CHECK_CXX_COMPILER_USED_Training)
@@ -108,8 +108,8 @@ file(GLOB_RECURSE LaSVM_Test_SRC
 	"la_test.cpp"
 )
 
-add_executable(Test ${LaSVM_TOOLS_HEADERS} ${LaSVM_Test_HEADERS} ${LaSVM_Test_SRC})
-target_link_libraries (Test
+add_executable(la_test ${LaSVM_TOOLS_HEADERS} ${LaSVM_Test_HEADERS} ${LaSVM_Test_SRC})
+target_link_libraries (la_test
 	Tools
 )
 
@@ -121,7 +121,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
   # using Intel C++
 else()
   # GCC or Clang
-	target_link_libraries (Test
+	target_link_libraries (la_test
 		m
 	)
 endif(CHECK_CXX_COMPILER_USED_Test)
