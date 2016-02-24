@@ -27,10 +27,10 @@
  * $Id: messages.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 
-#include "messages.h"
+#include "messages.hpp"
 
 lasvm_message_t lasvm_message_level = LASVM_INFO;
 

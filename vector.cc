@@ -27,13 +27,13 @@
  * $Id: vector.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 
-#include "messages.h"
-#include "vector.h"
+#include "messages.hpp"
+#include "vector.hpp"
 
 
 #ifdef __cplusplus__
@@ -146,7 +146,7 @@ lasvm_sparsevector_get(lasvm_sparsevector_t *v, int index)
 }
 
 static void 
-quickappend(lasvm_sparsevector_t *v, int index, double data)
+quickappend(lasvm_sparsevector_t *v, size_t index, double data)
 {
   lasvm_sparsevector_pair_t *d;
   d = (lasvm_sparsevector_pair_t*)xmalloc(sizeof(lasvm_sparsevector_pair_t));
@@ -161,7 +161,7 @@ quickappend(lasvm_sparsevector_t *v, int index, double data)
 }
 
 void 
-lasvm_sparsevector_set(lasvm_sparsevector_t *v, int index, double data)
+lasvm_sparsevector_set(lasvm_sparsevector_t *v, size_t index, double data)
 {
   if (index >= v->size)
     {

@@ -27,13 +27,13 @@
  * $Id: kcache.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 
-#include "messages.h"
-#include "kcache.h"
+#include "messages.hpp"
+#include "kcache.hpp"
 
 
 #ifndef max
@@ -161,7 +161,7 @@ lasvm_kcache_destroy(lasvm_kcache_t *self)
 }
 
 size_t *
-lasvm_kcache_i2r(lasvm_kcache_t *self, int n)
+lasvm_kcache_i2r(lasvm_kcache_t *self, size_t n)
 {
   xminsize(self, n);
   return self->i2r;
@@ -407,7 +407,7 @@ lasvm_kcache_discard_row(lasvm_kcache_t *self, size_t i)
 }
 
 void 
-lasvm_kcache_set_maximum_size(lasvm_kcache_t *self, long entries)
+lasvm_kcache_set_maximum_size(lasvm_kcache_t *self, size_t entries)
 {
   ASSERT(self);
   ASSERT(entries>0);

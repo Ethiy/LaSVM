@@ -2,24 +2,24 @@
 
 using namespace std;
 
-#include <stdio.h>  
+#include <cstdio>  
 #include <iostream>
 #include <fstream>
-#include <stdio.h>
+#include <cstdio>
 #include <vector>
 #include <cmath>
 
-#include "vector.h"
+#include "vector.hpp"
 
 vector <lasvm_sparsevector_t*> X; // feature vectors
 vector <int> Y;                   // labels
-int m;                            // number of examples
+size_t m;                            // number of examples
 int sparse=1;
 int max_index = 0;
 
-int binary_load_data(char *filename)
+size_t binary_load_data(char *filename)
 {
-    int msz,i=0,j;
+    size_t msz,i=0,j;
     lasvm_sparsevector_t* v;
     int nonsparse=0;
 
@@ -29,7 +29,7 @@ int binary_load_data(char *filename)
     // read number of examples and number of features
     int sz[2]; 
     f.read((char*)sz,2*sizeof(int));
-    if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
+    if (!f) { printf("File writing error in line %zu.\n",i); exit(1);}
     msz=sz[0]; max_index=sz[1];
 
     vector <double> val;
@@ -69,7 +69,7 @@ int binary_load_data(char *filename)
     f.close();
     
     msz=X.size();
-    printf("examples: %d   features: %d\n",msz,max_index);
+    printf("examples: %zu   features: %d\n",msz,max_index);
     
     return msz;
 }
@@ -77,7 +77,7 @@ int binary_load_data(char *filename)
 
 void libsvm_save(char *fname)
 {	
-    FILE *f = fopen(fname,"w");
+    FILE *f = fopen(fname,"w"); 
     for(int i=0;i<m;i++) 
     {
         fprintf(f,"%d", (int) Y[i]);
@@ -86,10 +86,10 @@ void libsvm_save(char *fname)
         { 
             if(p->index>max_index)
             {
-                printf("error! index %d??\n",p->index); 
+                printf("error! index %zu??\n",p->index); 
                 exit(1);
             }
-            fprintf(f," %d:%.15g", p->index, p->data);
+            fprintf(f," %zu:%.15g", p->index, p->data);
             p = p->next; 	
         } 
         fprintf(f,"\n");

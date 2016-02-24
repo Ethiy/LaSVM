@@ -23,17 +23,17 @@
  * $Id: lasvm.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <float.h>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <cfloat>
 #include <cmath>
 #include <limits>
 
-#include "messages.h"
-#include "kcache.h"
-#include "lasvm.h"
+#include "messages.hpp"
+#include "kcache.hpp"
+#include "lasvm.hpp"
 
 #ifndef min
 # define min(a,b) (((a)<(b))?(a):(b))
@@ -416,7 +416,7 @@ evict( lasvm_t *self )
 }
 
 int 
-lasvm_process( lasvm_t *self, int xi, double y )
+lasvm_process( lasvm_t *self, size_t xi, double y )
 {
   int l = self->l;
   size_t *i2r = 0;
@@ -624,7 +624,7 @@ double lasvm_get_w2(lasvm_t *self)
 }
 
 double 
-lasvm_predict(lasvm_t *self, int xi)
+lasvm_predict(lasvm_t *self, size_t xi)
 {
   int l = self->l;
   double *row = lasvm_kcache_query_row(self->kernel, xi, l);
@@ -656,8 +656,8 @@ lasvm_predict_nocache(lasvm_t *self, int xi)
   return s;
 }
 
-void lasvm_init( lasvm_t *self, int l, 
-                 const int *sv, 
+void lasvm_init( lasvm_t *self, size_t l, 
+                 const size_t *sv, 
                  const double *alpha, 
                  const double *g )
 {

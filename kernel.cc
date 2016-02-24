@@ -27,14 +27,14 @@
  * $Id: kernel.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <cmath>
 
-#include "messages.h"
-#include "kernel.h"
+#include "messages.hpp"
+#include "kernel.hpp"
 
 #ifdef __cplusplus__
 #define this  mythis
