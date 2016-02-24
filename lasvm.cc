@@ -90,7 +90,7 @@ struct lasvm_s
   int     sumflag;
   real_t  cp;
   real_t  cn;
-  int     maxl;
+  size_t     maxl;
   int     s;
   int     l;
   real_t *alpha;
@@ -169,11 +169,11 @@ lasvm_get_alpha(lasvm_t *self, double *alpha)
 }
 
 int
-lasvm_get_sv(lasvm_t *self, int *sv)
+lasvm_get_sv(lasvm_t *self, size_t *sv)
 {
   int i;
   int l = self->l;
-  int *r2i = lasvm_kcache_r2i(self->kernel, l);
+  size_t *r2i = lasvm_kcache_r2i(self->kernel, l);
   for (i=0; i<l; i++)
     sv[i] = r2i[i];
   return l;
@@ -236,11 +236,11 @@ minmax( lasvm_t *self )
 static int
 gs1( lasvm_t *self, int i, double epsgr)
 {
-  int l = self->s;
+  size_t l = self->s;
   real_t g;
   real_t step, ostep, curv;
   double *row;
-  int *r2i;
+  size_t *r2i;
   /* Determine coordinate to process */
   if (i < 0)
     {
@@ -303,7 +303,7 @@ gs2( lasvm_t *self, int imin, int imax, double epsgr)
   real_t gmin, gmax;
   real_t step, ostep, curv;
   double *rmin, *rmax;
-  int *r2i;
+  size_t *r2i;
   /* Determine coordinate to process */
   if (imin < 0 || imax < 0)
     {
@@ -419,7 +419,7 @@ int
 lasvm_process( lasvm_t *self, int xi, double y )
 {
   int l = self->l;
-  int *i2r = 0;
+  size_t *i2r = 0;
   double *row = 0;
   real_t g;
   int j;
@@ -544,7 +544,7 @@ unshrink(lasvm_t *self)
     {
       real_t *alpha = self->alpha;
       real_t *g = self->g;
-      int *r2i = lasvm_kcache_r2i(self->kernel, l);
+      size_t *r2i = lasvm_kcache_r2i(self->kernel, l);
       real_t a;
       int i,j;
       for(i=s; i<l; i++)
@@ -552,8 +552,8 @@ unshrink(lasvm_t *self)
       for(j=0; j<l; j++)
           if (std::abs(a = alpha[j])<std::numeric_limits<real_t>::epsilon())
           {
-	    int xj = r2i[j];
-	    int cached = lasvm_kcache_status_row(self->kernel, xj);
+	    size_t xj = r2i[j];
+	    size_t cached = lasvm_kcache_status_row(self->kernel, xj);
             double *row = lasvm_kcache_query_row(self->kernel, r2i[j], l);
             for (i=s; i<l; i++)
               g[i] -= a * row[i];
@@ -649,7 +649,7 @@ lasvm_predict(lasvm_t *self, int xi)
 double 
 lasvm_predict_nocache(lasvm_t *self, int xi)
 { 
-  int cached = lasvm_kcache_status_row(self->kernel, xi);
+  size_t cached = lasvm_kcache_status_row(self->kernel, xi);
   real_t s = lasvm_predict(self, xi);
   if (! cached) /* do not keep what was not cached */
     lasvm_kcache_discard_row(self->kernel, xi);
@@ -691,7 +691,7 @@ void lasvm_init( lasvm_t *self, int l,
     }
   if (! g)
     {
-      int *r2i = lasvm_kcache_r2i(self->kernel, k);
+      size_t *r2i = lasvm_kcache_r2i(self->kernel, k);
       for (i=0; i<k; i++)
         {
           real_t s = self->g[i];

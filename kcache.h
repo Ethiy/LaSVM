@@ -49,7 +49,7 @@ extern "C" {
 */
 #ifndef LASVM_KERNEL_T_DEFINED
 #define LASVM_KERNEL_T_DEFINED
-typedef double (*lasvm_kernel_t)(int i, int j, void* closure);
+typedef double (*lasvm_kernel_t)(size_t i, size_t j, void* closure);
 #endif
 
 
@@ -85,20 +85,20 @@ void lasvm_kcache_set_maximum_size(lasvm_kcache_t *self, long entries);
 /* --- lasvm_kcache_get_maximum_size
    Returns the maximum cache memory.
  */
-long lasvm_kcache_get_maximum_size(lasvm_kcache_t *self);
+size_t lasvm_kcache_get_maximum_size(lasvm_kcache_t *self);
 
 /* --- lasvm_kcache_get_current_size
    Returns the currently used cache memory.
    This can slighly exceed the value specified by 
    <lasvm_kcache_set_maximum_size>.
  */
-long lasvm_kcache_get_current_size(lasvm_kcache_t *self);
+size_t lasvm_kcache_get_current_size(lasvm_kcache_t *self);
 
 /* --- lasvm_kcache_query
    Returns the possibly cached value of the Gram matrix element (<i>,<j>).
    This function will not modify the cache geometry.
  */
-double lasvm_kcache_query(lasvm_kcache_t *self, int i, int j);
+double lasvm_kcache_query(lasvm_kcache_t *self, size_t i, size_t j);
 
 /* --- lasvm_kcache_query_row
    Returns the <len> first elements of row <i> of the Gram matrix.
@@ -108,19 +108,19 @@ double lasvm_kcache_query(lasvm_kcache_t *self, int i, int j);
    and vice-versa.
 */
 
-double *lasvm_kcache_query_row(lasvm_kcache_t *self, int i, int len);
+double *lasvm_kcache_query_row(lasvm_kcache_t *self, size_t i, size_t len);
 
 /* --- lasvm_kcache_status_row
    Returns the number of cached entries for row i.
 */
 
-int lasvm_kcache_status_row(lasvm_kcache_t *self, int i);
+size_t lasvm_kcache_status_row(lasvm_kcache_t *self, size_t i);
 
 /* --- lasvm_kcache_discard_row
    Indicates that we wont need row i in the near future.
 */
 
-void lasvm_kcache_discard_row(lasvm_kcache_t *self, int i);
+void lasvm_kcache_discard_row(lasvm_kcache_t *self, size_t i);
 
 
 /* --- lasvm_kcache_i2r
@@ -129,8 +129,8 @@ void lasvm_kcache_discard_row(lasvm_kcache_t *self, int i);
    the conversion table from example index to row position and vice-versa. 
 */
 
-int *lasvm_kcache_i2r(lasvm_kcache_t *self, int n);
-int *lasvm_kcache_r2i(lasvm_kcache_t *self, int n);
+size_t *lasvm_kcache_i2r(lasvm_kcache_t *self, size_t n);
+size_t *lasvm_kcache_r2i(lasvm_kcache_t *self, size_t n);
 
 
 /* --- lasvm_kcache_swap_rr
