@@ -11,7 +11,7 @@ using namespace std;
 #include <fstream>
 #include <algorithm>
 
-#include "vector.h"
+#include "vector.hpp"
 
 #define LINEAR  0
 #define POLY    1
@@ -34,7 +34,7 @@ bool operator<(const ID& x, const ID& y)
     return x.x < y.x;
 }
 
-int m,msv;                         // training and test set sizes
+size_t m,msv;                         // training and test set sizes
 vector <lasvm_sparsevector_t*> X; // feature vectors for test set
 vector <lasvm_sparsevector_t*> Xsv;// feature vectors for SVs
 vector <int> Y;                   // labels
@@ -106,7 +106,7 @@ int split_file_load(char *f)
 }
 
 
-int libsvm_load_data(char *filename)
+size_t libsvm_load_data(char *filename)
 // loads the same format as LIBSVM
 {
     int index; double value;
@@ -123,7 +123,7 @@ int libsvm_load_data(char *filename)
         printf("loading \"%s\"..  \n",filename);
     int splitpos=0;
 
-    int msz = 0; 
+    size_t msz = 0; 
     elements = 0;
     while(1)
     {
@@ -213,14 +213,15 @@ int libsvm_load_data(char *filename)
     fclose(fp);
 
     msz=X.size()-m;
-    printf("examples: %d   features: %d\n",msz,max_index);
+    printf("examples: %zd   features: %d\n",msz,max_index);
 
     return msz;
 }
 
-int binary_load_data(char *filename)
+size_t binary_load_data(char *filename)
 {
-    int msz,i=0,j;
+	size_t msz;
+	int	i=0,j;
     lasvm_sparsevector_t* v;
     int nonsparse=0;
 
@@ -296,7 +297,7 @@ int binary_load_data(char *filename)
     f.close();
 
     msz=X.size()-m;
-    printf("examples: %d   features: %d\n",msz,max_index);
+    printf("examples: %zd   features: %d\n",msz,max_index);
 
     return msz;
 }
@@ -304,7 +305,8 @@ int binary_load_data(char *filename)
 
 void load_data_file(char *filename)
 {
-    int msz,i,ft;
+	size_t msz;
+	int i, ft;
     splits.resize(0); 
 
     int bin=binary_files;
@@ -393,7 +395,7 @@ void load_data_file(char *filename)
 	label=1; // dummy
     }
     
-    printf("loading model: %d svs\n",msv);
+    printf("loading model: %zu svs\n",msv);
     
     if(kernel_type==RBF)
     {
@@ -451,7 +453,7 @@ int libsvm_load_model(const char *model_file_name)
     fscanf(fp,"%1000s",tmp); // nr_class
     fscanf(fp,"%1000s",tmp); // 2
     fscanf(fp,"%1000s",tmp); // total_sv
-    fscanf(fp,"%d",&msv); 
+    fscanf(fp,"%zd",&msv); 
 
     fscanf(fp,"%1000s",tmp); //rho
     fscanf(fp,"%lf\n",&b0);
@@ -511,7 +513,7 @@ void test(char *output_name)
 	if(((int)y)==Y[i]) acc++; 
     }
 
-    printf("accuracy= %g (%d/%d)\n",(acc/m)*100,((int)acc),m);
+    printf("accuracy= %g (%zd/%zd)\n",(acc/m)*100,((size_t)acc),m);
     fclose(fp);
 }
 
