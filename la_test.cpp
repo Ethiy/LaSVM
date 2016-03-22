@@ -10,9 +10,8 @@ using namespace std;
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <cfloat>
 
-#include "vector.hpp"
+#include "vector.h"
 
 #define LINEAR  0
 #define POLY    1
@@ -35,7 +34,7 @@ bool operator<(const ID& x, const ID& y)
     return x.x < y.x;
 }
 
-long m,msv;                         // training and test set sizes
+int m,msv;                         // training and test set sizes
 vector <lasvm_sparsevector_t*> X; // feature vectors for test set
 vector <lasvm_sparsevector_t*> Xsv;// feature vectors for SVs
 vector <int> Y;                   // labels
@@ -54,7 +53,7 @@ int max_index=0;
 
 
 
-[[noreturn]]void exit_with_help()
+void exit_with_help()
 {
     fprintf(stdout,
 	    "\nUsage: la_test [options] test_set_file model_file output_file\n"
@@ -91,12 +90,12 @@ int split_file_load(char *f)
     if(!inds) return binary_file;
     while(1)
     {
-        int i,j = 0;
+        int i,j;
         int c=fscanf(fp,"%d",&i);
         if(labs) c=fscanf(fp,"%d",&j);
         if(c==-1) break;
         if (labs) 
-			splits.push_back(ID(i-1,j));
+			splits.push_back(ID(i-1,j)); 
 		else 
 			splits.push_back(ID(i-1,0));
     }
@@ -107,7 +106,7 @@ int split_file_load(char *f)
 }
 
 
-long libsvm_load_data(char *filename)
+int libsvm_load_data(char *filename)
 // loads the same format as LIBSVM
 {
     int index; double value;
@@ -124,7 +123,7 @@ long libsvm_load_data(char *filename)
         printf("loading \"%s\"..  \n",filename);
     int splitpos=0;
 
-    long msz = 0; 
+    int msz = 0; 
     elements = 0;
     while(1)
     {
@@ -134,7 +133,7 @@ long libsvm_load_data(char *filename)
         case '\n':
             if(splits.size()>0) 
             {
-                if(splitpos<static_cast<int>( splits.size() ) && splits[splitpos].x==msz)
+                if(splitpos<(int)splits.size() && splits[splitpos].x==msz)
                 {
                     v=lasvm_sparsevector_create();
                     X.push_back(v);	splitpos++;
@@ -169,7 +168,7 @@ long libsvm_load_data(char *filename)
         int write=0;
         if(splits.size()>0)
         {
-            if(splitpos< static_cast<int>( splits.size() )  && splits[splitpos].x==i)
+            if(splitpos<(int)splits.size() && splits[splitpos].x==i)
             {
                 write=2;splitpos++;
             }
@@ -214,16 +213,15 @@ long libsvm_load_data(char *filename)
     fclose(fp);
 
     msz=X.size()-m;
-    printf("examples: %ld   features: %d\n",msz,max_index);
+    printf("examples: %d   features: %d\n",msz,max_index);
 
     return msz;
 }
 
-long binary_load_data(char *filename)
+int binary_load_data(char *filename)
 {
-	long msz;
-	int	i=0,j;
-    lasvm_sparsevector_t* v = nullptr;
+    int msz,i=0,j;
+    lasvm_sparsevector_t* v;
     int nonsparse=0;
 
     ifstream f;
@@ -235,7 +233,7 @@ long binary_load_data(char *filename)
     if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
     msz=sz[0]; max_index=sz[1];
 
-    vector <double> val;
+    vector <float> val;
     vector <int>   ind;
     val.resize(max_index);
     if(max_index>0) nonsparse=1;
@@ -246,7 +244,7 @@ long binary_load_data(char *filename)
         int mwrite=0;
         if(splits.size()>0)
         {
-            if(splitpos< static_cast<int>( splits.size() )  && splits[splitpos].x==i)
+            if(splitpos<(int)splits.size() && splits[splitpos].x==i) 
             { 
                 mwrite=1;splitpos++;
                 v=lasvm_sparsevector_create(); X.push_back(v);
@@ -268,7 +266,7 @@ long binary_load_data(char *filename)
                 else
                     Y.push_back(sz[0]);
             }
-            f.read((char*)(&val[0]),max_index*sizeof(double));
+            f.read((char*)(&val[0]),max_index*sizeof(float));
             if(mwrite)
                 for(j=0;j<max_index;j++) // set features for each example
                     lasvm_sparsevector_set(v,j,val[j]);
@@ -285,7 +283,7 @@ long binary_load_data(char *filename)
             }
             val.resize(sz[1]); ind.resize(sz[1]);
             f.read((char*)(&ind[0]),sz[1]*sizeof(int));
-            f.read((char*)(&val[0]),sz[1]*sizeof(double));
+            f.read((char*)(&val[0]),sz[1]*sizeof(float));
             if(mwrite)
                 for(j=0;j<sz[1];j++) // set features for each example
                 {
@@ -298,7 +296,7 @@ long binary_load_data(char *filename)
     f.close();
 
     msz=X.size()-m;
-    printf("examples: %ld   features: %d\n",msz,max_index);
+    printf("examples: %d   features: %d\n",msz,max_index);
 
     return msz;
 }
@@ -306,8 +304,7 @@ long binary_load_data(char *filename)
 
 void load_data_file(char *filename)
 {
-	long msz;
-	int i, ft;
+    int msz,i,ft;
     splits.resize(0); 
 
     int bin=binary_files;
@@ -347,8 +344,8 @@ void load_data_file(char *filename)
             x_square[i+m]=lasvm_sparsevector_dot_product(X[i+m],X[i+m]);
     }
 
-    if( fabs( kgamma +1 ) < FLT_EPSILON )
-        kgamma=1.0/ ( static_cast<double>( max_index ) ); // same default as LIBSVM
+    if(kgamma==-1)
+        kgamma=1.0/ ((double) max_index); // same default as LIBSVM
 
     m+=msz;
 }
@@ -396,7 +393,7 @@ void load_data_file(char *filename)
 	label=1; // dummy
     }
     
-    printf("loading model: %zu svs\n",msv);
+    printf("loading model: %d svs\n",msv);
     
     if(kernel_type==RBF)
     {
@@ -454,7 +451,7 @@ int libsvm_load_model(const char *model_file_name)
     fscanf(fp,"%1000s",tmp); // nr_class
     fscanf(fp,"%1000s",tmp); // 2
     fscanf(fp,"%1000s",tmp); // total_sv
-    fscanf(fp,"%ld",&msv); 
+    fscanf(fp,"%d",&msv); 
 
     fscanf(fp,"%1000s",tmp); //rho
     fscanf(fp,"%lf\n",&b0);
@@ -500,22 +497,32 @@ double kernel(int i, int j, void *kparam)
 
 void test(char *output_name)
 {	
-    FILE *fp=fopen(output_name,"w");
-    int i,j; double y; double acc=0;
+    ofstream output_file ( output_name );
+    int i,j;
+    double y;
+    double acc=0;
 
-    for(i=0;i<m;i++)
-    {
-	y=-b0;
-	for(j=0;j<msv;j++)
-	{
-	    y+=alpha[j]*kernel(i,j,NULL);
-	}
-	if(y>=0) y=1; else y=-1; 
-	if(( static_cast<int>(y) )==Y[i]) acc++;
+    if( output_file.is_open() ){
+
+        for(i=0;i<m;i++){
+            y=-b0;
+            for(j=0;j<msv;j++)
+                y+=alpha[j]*kernel(i,j,NULL);
+
+            if(y>=0) 
+                y=1;
+            else 
+                y=-1;
+            if( ((int)y)==Y[i] ) 
+                acc++;
+
+            output_file << y << endl;
+        }
+
+        output_file.close();
     }
 
-    printf("accuracy= %g (%ld/%ld)\n",(acc/m)*100,( static_cast<long>( acc ) ),m);
-    fclose(fp);
+    printf("accuracy= %g (%d/%d)\n",(acc/m)*100,((int)acc),m);
 }
 
 
