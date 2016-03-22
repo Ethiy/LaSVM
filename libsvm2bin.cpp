@@ -2,7 +2,7 @@
 
 using namespace std;
 
-#include <cstdio>  
+#include <stdio.h>  
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -10,20 +10,20 @@ using namespace std;
 #include <cmath>
 #include <cstring>
 
-#include "vector.hpp"
+#include "vector.h"
 
 vector <lasvm_sparsevector_t*> X; // feature vectors
 vector <int> Y;                   // labels
-long m;                            // number of examples
+int m;                            // number of examples
 int sparse=1;
-long	max_index = 0;
+int	max_index = 0;
 
 void libsvm_load_data(char *filename)
 // loads the same format as LIBSVM
 { 
     int index; double value;
     int elements, i;
-	FILE *fp = fopen(filename,"r");
+    FILE *fp = fopen(filename,"r");
     lasvm_sparsevector_t* v;
 
     if(fp == NULL)
@@ -86,7 +86,7 @@ void libsvm_load_data(char *filename)
     fclose(fp); 
 	
     m=X.size();
-    printf("examples: %zu   features: %zu\n",m,max_index);
+    printf("examples: %d   features: %d\n",m,max_index);
 }
 
 
@@ -97,11 +97,11 @@ void fullbin_save(char *fname)
     f.open(fname,ios::out|ios::binary);
 
     // write number of examples and number of features
-    long sz[2]; sz[0]=m; sz[1]=max_index;
-    f.write( (char*)sz ,2*sizeof(int) );
+    int sz[2]; sz[0]=m; sz[1]=max_index;
+    f.write((char*)sz,2*sizeof(int));
     if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
     
-    std::vector<double> buf(max_index+1); 
+    float buf[max_index+1]; 
     for(i=0;i<m;i++) 
     {
         sz[0]=Y[i];       // write label
@@ -114,12 +114,12 @@ void fullbin_save(char *fname)
         { 
             if(p->index>max_index)
             {
-                printf("error! index %zu??\n",p->index); exit(1);
+                printf("error! index %d??\n",p->index); exit(1);
             }
             buf[p->index]=p->data;
             p = p->next; 	
         }
-        f.write(reinterpret_cast<char*>(buf.data()),max_index*sizeof(double));
+        f.write((char*)buf,max_index*sizeof(float));
     }
     f.close();
 }
@@ -133,12 +133,12 @@ void bin_save(char *fname)
     f.open(fname,ios::out|ios::binary);
 
     // write number of examples and a 0 to say that the matrix is sparse
-    long sz[2]; sz[0]=m; sz[1]=0;
+    int sz[2]; sz[0]=m; sz[1]=0;
     f.write((char*)sz,2*sizeof(int));
     if (!f) {printf("File writing error in line %d.\n",i); exit(1);}
 
-    std::vector<double> buf(max_index);
-    std::vector<long>   ind(max_index);
+    float buf[max_index];
+    int   ind[max_index];
 	
     for(i=0;i<m;i++)
     {   
@@ -155,8 +155,8 @@ void bin_save(char *fname)
         sz[0]=Y[i];       // write label
         sz[1]=max_index;  // write length of example (how many nonsparse entries)
         f.write((char*)sz,2*sizeof(int));
-        f.write(reinterpret_cast<char*>(ind.data()),max_index*sizeof(int));   // write indices
-        f.write(reinterpret_cast<char*>(buf.data()),max_index*sizeof(double)); // write values
+        f.write((char*)ind,max_index*sizeof(int));   // write indices
+        f.write((char*)buf,max_index*sizeof(float)); // write values
         if (!f) {printf("File writing error in line %d.\n",i); exit(1);}
     }
     f.close();

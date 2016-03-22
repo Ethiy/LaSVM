@@ -2,25 +2,24 @@
 
 using namespace std;
 
-#include <cstdio>  
+#include <stdio.h>  
 #include <iostream>
 #include <fstream>
-#include <cstdio>
+#include <stdio.h>
 #include <vector>
 #include <cmath>
-#include <cfloat>
 
-#include "vector.hpp"
+#include "vector.h"
 
 vector <lasvm_sparsevector_t*> X; // feature vectors
 vector <int> Y;                   // labels
-long m;                            // number of examples
+int m;                            // number of examples
 int sparse=1;
 int max_index = 0;
 
-long binary_load_data(char *filename)
+int binary_load_data(char *filename)
 {
-    long msz,i=0,j;
+    int msz,i=0,j;
     lasvm_sparsevector_t* v;
     int nonsparse=0;
 
@@ -30,10 +29,10 @@ long binary_load_data(char *filename)
     // read number of examples and number of features
     int sz[2]; 
     f.read((char*)sz,2*sizeof(int));
-    if (!f) { printf("File writing error in line %ld.\n",i); exit(1);}
+    if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
     msz=sz[0]; max_index=sz[1];
 
-    vector <double> val;
+    vector <float> val;
     vector <int>   ind;
     val.resize(max_index);
     if(max_index>0) nonsparse=1;
@@ -46,7 +45,7 @@ long binary_load_data(char *filename)
         {
             f.read((char*)sz,1*sizeof(int)); // get label
             Y.push_back(sz[0]);
-            f.read((char*)(&val[0]),max_index*sizeof(double));
+            f.read((char*)(&val[0]),max_index*sizeof(float));
             for(j=0;j<max_index;j++) // set features for each example
                 lasvm_sparsevector_set(v,j,val[j]);
         }
@@ -57,10 +56,10 @@ long binary_load_data(char *filename)
             val.resize(sz[1]); 
             ind.resize(sz[1]);
             f.read((char*)(&ind[0]),sz[1]*sizeof(int));
-            f.read((char*)(&val[0]),sz[1]*sizeof(double));
+            f.read((char*)(&val[0]),sz[1]*sizeof(float));
             for(j=0;j<sz[1];j++) // set features for each example
             {
-                if ( fabs(val[j])> FLT_EPSILON )
+                if (val[j]!=0)
                     lasvm_sparsevector_set(v,ind[j],val[j]);
                 if(ind[j]>max_index)
                     max_index=ind[j];
@@ -70,7 +69,7 @@ long binary_load_data(char *filename)
     f.close();
     
     msz=X.size();
-    printf("examples: %ld   features: %d\n",msz,max_index);
+    printf("examples: %d   features: %d\n",msz,max_index);
     
     return msz;
 }
@@ -78,19 +77,19 @@ long binary_load_data(char *filename)
 
 void libsvm_save(char *fname)
 {	
-    FILE *f = fopen(fname,"w"); 
+    FILE *f = fopen(fname,"w");
     for(int i=0;i<m;i++) 
     {
-        fprintf( f,"%d", static_cast<int>(Y[i]) );
+        fprintf(f,"%d", (int) Y[i]);
         lasvm_sparsevector_pair_t *p = X[i]->pairs;
         while (p )
         { 
             if(p->index>max_index)
             {
-                printf("error! index %ld??\n",p->index); 
+                printf("error! index %d??\n",p->index); 
                 exit(1);
             }
-            fprintf(f," %ld:%.15g", p->index, p->data);
+            fprintf(f," %d:%.15g", p->index, p->data);
             p = p->next; 	
         } 
         fprintf(f,"\n");

@@ -27,10 +27,10 @@
  * $Id: messages.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <cstdlib>
-#include <cstdio>
+#include <stdlib.h>
+#include <stdio.h>
 
-#include "messages.hpp"
+#include "messages.h"
 
 lasvm_message_t lasvm_message_level = LASVM_INFO;
 
@@ -54,7 +54,7 @@ defaultproc(lasvm_message_t level, const char *fmt, va_list ap)
 }
 
 void 
-lasvm_error(const char *fmt, ...)
+lasvm_error(const char *fmt, ...) 
 { 
   lasvm_message_proc_t *f = lasvm_message_proc;
   va_list ap; 

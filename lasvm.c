@@ -23,17 +23,16 @@
  * $Id: lasvm.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <cstdlib>
-#include <cstdarg>
-#include <cstdio>
-#include <cstring>
-#include <cfloat>
-#include <cmath>
-#include <limits>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
+#include <float.h>
+#include <math.h>
 
-#include "messages.hpp"
-#include "kcache.hpp"
-#include "lasvm.hpp"
+#include "messages.h"
+#include "kcache.h"
+#include "lasvm.h"
 
 #ifndef min
 # define min(a,b) (((a)<(b))?(a):(b))
@@ -50,21 +49,21 @@
 # define FLT_EPSILON 1e-6
 #endif
 
-#if defined(USE_CBLAS) && USE_CBLAS
+#if USE_CBLAS
 # include <cblas.h>
 # unded  USE_FLOAT
 # define USE_FLOAT 1
 #endif
 
-#if defined(USE_FLOAT) && USE_FLOAT
-# define real_t double
+#if USE_FLOAT
+# define real_t float
 #else
 # define real_t double
 #endif
 
 
 static void *
-xmalloc(long n)
+xmalloc(int n)
 {
   void *p = malloc(n);
   if (! p) 
@@ -73,7 +72,7 @@ xmalloc(long n)
 }
 
 static void *
-xrealloc(void *ptr, long n)
+xrealloc(void *ptr, int n)
 {
   if (! ptr)
     ptr = malloc(n);
@@ -87,32 +86,31 @@ xrealloc(void *ptr, long n)
 struct lasvm_s 
 {
   lasvm_kcache_t *kernel;
+  int     sumflag;
+  real_t  cp;
+  real_t  cn;
+  int     maxl;
+  int     s;
+  int     l;
   real_t *alpha;
   real_t *cmin;
   real_t *cmax;
   real_t *g;
-  real_t  cp;
-  real_t  cn;
   real_t  gmin, gmax;
   int     imin, imax;
   int     minmaxflag;
-  int     sumflag;
-  long     maxl;
-  int     s;
-  int     l;
-  
 };
 
 static void
-checksize(lasvm_t *self, long l)
+checksize(lasvm_t *self, int l)
 {
-  long maxl = max(l,256);
+  int maxl = max(l,256);
   while (maxl < l)
     maxl += maxl;
-  self->alpha = static_cast<real_t*>(xrealloc(self->alpha, maxl*sizeof(real_t)));
-  self->cmin = static_cast<real_t*>(xrealloc(self->cmin, maxl*sizeof(real_t)));
-  self->cmax = static_cast<real_t*>(xrealloc(self->cmax, maxl*sizeof(real_t)));
-  self->g = static_cast<real_t*>(xrealloc(self->g, maxl*sizeof(real_t)));
+  self->alpha = (real_t*)xrealloc(self->alpha, maxl*sizeof(real_t));
+  self->cmin = (real_t*)xrealloc(self->cmin, maxl*sizeof(real_t));
+  self->cmax = (real_t*)xrealloc(self->cmax, maxl*sizeof(real_t));
+  self->g = (real_t*)xrealloc(self->g, maxl*sizeof(real_t));
   self->maxl = maxl;
 }
 
@@ -120,7 +118,7 @@ lasvm_t *
 lasvm_create( lasvm_kcache_t *cache,
               int sumflag, double cp, double cn )
 {
-  lasvm_t *self = static_cast<lasvm_t*>(xmalloc(sizeof(lasvm_t)));
+  lasvm_t *self = (lasvm_t*)xmalloc(sizeof(lasvm_t));
   memset(self, 0, sizeof(lasvm_t));
   self->kernel = cache;
   self->cp = cp;
@@ -170,11 +168,11 @@ lasvm_get_alpha(lasvm_t *self, double *alpha)
 }
 
 int
-lasvm_get_sv(lasvm_t *self, long *sv)
+lasvm_get_sv(lasvm_t *self, int *sv)
 {
   int i;
   int l = self->l;
-  long *r2i = lasvm_kcache_r2i(self->kernel, l);
+  int *r2i = lasvm_kcache_r2i(self->kernel, l);
   for (i=0; i<l; i++)
     sv[i] = r2i[i];
   return l;
@@ -237,11 +235,11 @@ minmax( lasvm_t *self )
 static int
 gs1( lasvm_t *self, int i, double epsgr)
 {
-  long l = self->s;
+  int l = self->s;
   real_t g;
   real_t step, ostep, curv;
-  double *row;
-  long *r2i;
+  float *row;
+  int *r2i;
   /* Determine coordinate to process */
   if (i < 0)
     {
@@ -284,7 +282,7 @@ gs1( lasvm_t *self, int i, double epsgr)
     step = -step;
   self->alpha[i] += step;
 
-#if defined(USE_CBLAS) && USE_CBLAS
+#if USE_CBLAS
   cblas_saxpy(l, -step, row, 1, self->g, 1);
 #else
   {
@@ -303,8 +301,8 @@ gs2( lasvm_t *self, int imin, int imax, double epsgr)
   int l = self->s;
   real_t gmin, gmax;
   real_t step, ostep, curv;
-  double *rmin, *rmax;
-  long *r2i;
+  float *rmin, *rmax;
+  int *r2i;
   /* Determine coordinate to process */
   if (imin < 0 || imax < 0)
     {
@@ -332,16 +330,16 @@ gs2( lasvm_t *self, int imin, int imax, double epsgr)
   curv = rmax[imax]+rmin[imin]-rmax[imin]-rmin[imax];
   if (curv >= FLT_EPSILON)
     {
-      real_t ostep2 = (gmax - gmin) / curv;
-      if (ostep2 < step)
-        step = ostep2;
+      real_t ostep = (gmax - gmin) / curv;
+      if (ostep < step)
+        step = ostep;
     }
   else if (curv + FLT_EPSILON <= 0)
     lasvm_error("Kernel is not positive (negative curvature)\n");    
   /* Perform update */
   self->alpha[imax] += step;
   self->alpha[imin] -= step;
-#if defined(USE_CBLAS) && USE_CBLAS
+#if USE_CBLAS
   cblas_saxpy(l, -step, rmax, 1, self->g, 1);
   cblas_saxpy(l,  step, rmin, 1, self->g, 1);
 #else
@@ -399,7 +397,7 @@ evict( lasvm_t *self )
       gmin = self->gmin;
       gmax = self->gmax;
       for (i=0; i<l; i++)
-          if (std::abs(alpha[i])< std::numeric_limits<real_t>::epsilon())
+        if (alpha[i] == 0)
           if ((g[i]>=gmax && 0>=cmax[i]) ||
               (g[i]<=gmin && 0<=cmin[i])  )
             swap(self, i--, --l);
@@ -408,7 +406,7 @@ evict( lasvm_t *self )
   else
     {
       for (i=0; i<l; i++)
-          if (std::abs(alpha[i])< std::numeric_limits<real_t>::epsilon())
+        if (alpha[i] == 0)
           if ((g[i]>=0 && 0>=cmax[i]) ||
               (g[i]<=0 && 0<=cmin[i])  )
             swap(self, i--, --l);
@@ -417,17 +415,17 @@ evict( lasvm_t *self )
 }
 
 int 
-lasvm_process( lasvm_t *self, long xi, double y )
+lasvm_process( lasvm_t *self, int xi, double y )
 {
   int l = self->l;
-  long *i2r = 0;
-  double *row = 0;
+  int *i2r = 0;
+  float *row = 0;
   real_t g;
   int j;
   /* Checks */
   if (self->s != self->l)
     lasvm_error("lasvm_process(): internal error\n");
-    if (! (std::abs(y - 1) < std::numeric_limits<double>::epsilon() || (std::abs(y + 1) < std::numeric_limits<double>::epsilon())))
+  if (y != +1 && y != -1)
     lasvm_error("lasvm_process(): argument y must be +1 or -1\n");
   /* Bail out if already in expansion? */
   i2r = lasvm_kcache_i2r(self->kernel, 1+xi);
@@ -545,17 +543,17 @@ unshrink(lasvm_t *self)
     {
       real_t *alpha = self->alpha;
       real_t *g = self->g;
-      long *r2i = lasvm_kcache_r2i(self->kernel, l);
+      int *r2i = lasvm_kcache_r2i(self->kernel, l);
       real_t a;
       int i,j;
       for(i=s; i<l; i++)
         g[i] = (alpha[i]>0) ? 1.0 : -1.0;
       for(j=0; j<l; j++)
-          if (std::abs(a = alpha[j])<std::numeric_limits<real_t>::epsilon())
+        if ((a = alpha[j]) != 0)
           {
-	    long xj = r2i[j];
-	    long cached = lasvm_kcache_status_row(self->kernel, xj);
-            double *row = lasvm_kcache_query_row(self->kernel, r2i[j], l);
+	    int xj = r2i[j];
+	    int cached = lasvm_kcache_status_row(self->kernel, xj);
+            float *row = lasvm_kcache_query_row(self->kernel, r2i[j], l);
             for (i=s; i<l; i++)
               g[i] -= a * row[i];
 	    if (! cached) /* do not keep what was not cached */
@@ -625,15 +623,15 @@ double lasvm_get_w2(lasvm_t *self)
 }
 
 double 
-lasvm_predict(lasvm_t *self, long xi)
+lasvm_predict(lasvm_t *self, int xi)
 {
   int l = self->l;
-  double *row = lasvm_kcache_query_row(self->kernel, xi, l);
+  float *row = lasvm_kcache_query_row(self->kernel, xi, l);
   real_t *alpha = self->alpha;
   real_t s = 0;
   if (self->sumflag)
     minmax(self);
-#if defined(USE_CBLAS) && USE_CBLAS
+#if USE_CBLAS
   s = cblas_sdot(l, alpha, 1, row, 1);
 #else
   {
@@ -650,15 +648,15 @@ lasvm_predict(lasvm_t *self, long xi)
 double 
 lasvm_predict_nocache(lasvm_t *self, int xi)
 { 
-  long cached = lasvm_kcache_status_row(self->kernel, xi);
+  int cached = lasvm_kcache_status_row(self->kernel, xi);
   real_t s = lasvm_predict(self, xi);
   if (! cached) /* do not keep what was not cached */
     lasvm_kcache_discard_row(self->kernel, xi);
   return s;
 }
 
-void lasvm_init( lasvm_t *self, long l, 
-                 const long *sv, 
+void lasvm_init( lasvm_t *self, int l, 
+                 const int *sv, 
                  const double *alpha, 
                  const double *g )
 {
@@ -692,12 +690,12 @@ void lasvm_init( lasvm_t *self, long l,
     }
   if (! g)
     {
-      long *r2i = lasvm_kcache_r2i(self->kernel, k);
+      int *r2i = lasvm_kcache_r2i(self->kernel, k);
       for (i=0; i<k; i++)
         {
           real_t s = self->g[i];
-          double *row = lasvm_kcache_query_row(self->kernel, r2i[i] , k);
-#if defined(USE_CBLAS) && USE_CBLAS
+          float *row = lasvm_kcache_query_row(self->kernel, r2i[i] , k);
+#if USE_CBLAS
           s -= cblas_sdot(k, self->alpha, 1, row, 1);
 #else
           {
