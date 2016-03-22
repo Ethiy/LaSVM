@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.4)
 include(CheckCXXCompilerFlag)
+=======
+>>>>>>> parent of 44fd766... fix build
 project(LaSVM CXX C)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -55,7 +58,7 @@ file(GLOB_RECURSE LaSVM_TOOLS_HEADERS
 )
 
 file(GLOB_RECURSE LaSVM_TOOLS_SRC
-	"${LaSVM_SOURCE_DIR}/*.cc"
+	"${LaSVM_SOURCE_DIR}/*.c"
 )
 
 add_library(Tools ${LaSVM_TOOLS_HEADERS} ${LaSVM_TOOLS_SRC})
