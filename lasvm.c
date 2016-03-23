@@ -38,7 +38,7 @@
 
 
 static void *
-xmalloc(int n)
+xmalloc(long n)
 {
   void *p = malloc(n);
   if (! p) 
@@ -47,7 +47,7 @@ xmalloc(int n)
 }
 
 static void *
-xrealloc(void *ptr, int n)
+xrealloc(void *ptr, long n)
 {
   if (! ptr)
     ptr = malloc(n);
@@ -64,22 +64,22 @@ struct lasvm_s
   int     sumflag;
   real_t  cp;
   real_t  cn;
-  int     maxl;
-  int     s;
-  int     l;
+  long     maxl;
+  long     s;
+  long     l;
   real_t *alpha;
   real_t *cmin;
   real_t *cmax;
   real_t *g;
   real_t  gmin, gmax;
-  int     imin, imax;
-  int     minmaxflag;
+  long     imin, imax;
+  long     minmaxflag;
 };
 
 static void
-checksize(lasvm_t *self, int l)
+checksize(lasvm_t *self, long l)
 {
-  int maxl = max(l,256);
+  long maxl = max(l,256);
   while (maxl < l)
     maxl += maxl;
   self->alpha = (real_t*)xrealloc(self->alpha, maxl*sizeof(real_t));
@@ -114,7 +114,7 @@ lasvm_destroy( lasvm_t *self )
   free(self);
 }
 
-int 
+long 
 lasvm_get_l( lasvm_t *self )
 {
   return self->l;
@@ -132,32 +132,32 @@ lasvm_get_cn( lasvm_t *self )
   return self->cn;
 }
 
-int
+long
 lasvm_get_alpha(lasvm_t *self, double *alpha)
 {
-  int i;
-  int l = self->l;
+  long i;
+  long l = self->l;
   for (i=0; i<l; i++)
     alpha[i] = self->alpha[i];
   return l;
 }
 
-int
-lasvm_get_sv(lasvm_t *self, int *sv)
+long
+lasvm_get_sv(lasvm_t *self, long *sv)
 {
-  int i;
-  int l = self->l;
-  int *r2i = lasvm_kcache_r2i(self->kernel, l);
+  long i;
+  long l = self->l;
+  long *r2i = lasvm_kcache_r2i(self->kernel, l);
   for (i=0; i<l; i++)
     sv[i] = r2i[i];
   return l;
 }
 
-int
+long
 lasvm_get_g(lasvm_t *self, double *g)
 {
-  int i;
-  int l = self->l;
+  long i;
+  long l = self->l;
   for (i=0; i<l; i++)
     g[i] = self->g[i];
   return l;
@@ -168,10 +168,10 @@ minmax( lasvm_t *self )
 {
   if (! self->minmaxflag)
     {
-      int i;
-      int l = self->s;
-      int imin = -1;
-      int imax = -1;
+      long i;
+      long l = self->s;
+      long imin = -1;
+      long imax = -1;
       real_t gmin = 0;
       real_t gmax = 0;
       real_t *alpha = self->alpha;
@@ -207,14 +207,14 @@ minmax( lasvm_t *self )
     }
 }
 
-static int
-gs1( lasvm_t *self, int i, double epsgr)
+static long
+gs1( lasvm_t *self, long i, double epsgr)
 {
-  int l = self->s;
+  long l = self->s;
   real_t g;
   real_t step, ostep, curv;
   float *row;
-  int *r2i;
+  long *r2i;
   /* Determine coordinate to process */
   if (i < 0)
     {
@@ -261,7 +261,7 @@ gs1( lasvm_t *self, int i, double epsgr)
   cblas_saxpy(l, -step, row, 1, self->g, 1);
 #else
   {
-    int j;
+    long j;
     for (j=0; j<l; j++)
       self->g[j] -= step * row[j];
   }
@@ -270,14 +270,14 @@ gs1( lasvm_t *self, int i, double epsgr)
   return 1;
 }
 
-static int
-gs2( lasvm_t *self, int imin, int imax, double epsgr)
+static long
+gs2( lasvm_t *self, long imin, long imax, double epsgr)
 {
-  int l = self->s;
+  long l = self->s;
   real_t gmin, gmax;
   real_t step, ostep, curv;
   float *rmin, *rmax;
-  int *r2i;
+  long *r2i;
   /* Determine coordinate to process */
   if (imin < 0 || imax < 0)
     {
@@ -319,7 +319,7 @@ gs2( lasvm_t *self, int imin, int imax, double epsgr)
   cblas_saxpy(l,  step, rmin, 1, self->g, 1);
 #else
   {
-    int j;
+    long j;
     for (j=0; j<l; j++)
       self->g[j] -= step * ( rmax[j] - rmin[j] );
   }
@@ -329,7 +329,7 @@ gs2( lasvm_t *self, int imin, int imax, double epsgr)
 }
 
 static void
-swap( lasvm_t *self, int r1, int r2)
+swap( lasvm_t *self, long r1, long r2)
 {
 #define swap(type, v)        \
   { type tmp = self->v[r1];  \
@@ -358,8 +358,8 @@ swap( lasvm_t *self, int r1, int r2)
 static void
 evict( lasvm_t *self )
 {
-  int i;
-  int l = self->l;
+  long i;
+  long l = self->l;
   real_t *alpha = self->alpha;
   real_t *cmin = self->cmin;
   real_t *cmax = self->cmax;
@@ -389,14 +389,14 @@ evict( lasvm_t *self )
     }
 }
 
-int 
-lasvm_process( lasvm_t *self, int xi, double y )
+long 
+lasvm_process( lasvm_t *self, long xi, double y )
 {
-  int l = self->l;
-  int *i2r = 0;
+  long l = self->l;
+  long *i2r = 0;
   float *row = 0;
   real_t g;
-  int j;
+  long j;
   /* Checks */
   if (self->s != self->l)
     lasvm_error("lasvm_process(): internal error\n");
@@ -462,10 +462,10 @@ lasvm_process( lasvm_t *self, int xi, double y )
 }
 
 
-int 
+long 
 lasvm_reprocess(lasvm_t *self, double epsgr)
 {
-  int status;
+  long status;
   if (self->s != self->l)
     lasvm_error("lasvm_process(): internal error\n");
   if (self->sumflag)
@@ -481,8 +481,8 @@ lasvm_reprocess(lasvm_t *self, double epsgr)
 static void
 shrink(lasvm_t *self)
 {
-  int i;
-  int s = self->s;
+  long i;
+  long s = self->s;
   real_t *alpha = self->alpha;
   real_t *cmin = self->cmin;
   real_t *cmax = self->cmax;
@@ -512,22 +512,22 @@ shrink(lasvm_t *self)
 static void
 unshrink(lasvm_t *self)
 {
-  int l = self->l;
-  int s = self->s;
+  long l = self->l;
+  long s = self->s;
   if (s < l)
     {
       real_t *alpha = self->alpha;
       real_t *g = self->g;
-      int *r2i = lasvm_kcache_r2i(self->kernel, l);
+      long *r2i = lasvm_kcache_r2i(self->kernel, l);
       real_t a;
-      int i,j;
+      long i,j;
       for(i=s; i<l; i++)
         g[i] = (alpha[i]>0) ? 1.0 : -1.0;
       for(j=0; j<l; j++)
         if ((a = alpha[j]) != 0)
           {
-	    int xj = r2i[j];
-	    int cached = lasvm_kcache_status_row(self->kernel, xj);
+	    long xj = r2i[j];
+	    long cached = lasvm_kcache_status_row(self->kernel, xj);
             float *row = lasvm_kcache_query_row(self->kernel, r2i[j], l);
             for (i=s; i<l; i++)
               g[i] -= a * row[i];
@@ -539,12 +539,12 @@ unshrink(lasvm_t *self)
     }
 }
 
-int 
+long 
 lasvm_finish(lasvm_t *self, double epsgr)
 {
-  int iter = 0;
-  int siter = 0;
-  int status = self->l;
+  long iter = 0;
+  long siter = 0;
+  long status = self->l;
   while( status )
     {
       if (iter >= siter)
@@ -584,8 +584,8 @@ double lasvm_get_b(lasvm_t *self)
 
 double lasvm_get_w2(lasvm_t *self)
 {
-  int i;
-  int l = self->l;
+  long i;
+  long l = self->l;
   real_t *alpha = self->alpha;
   real_t *g = self->g;
   real_t s = 0;
@@ -598,9 +598,9 @@ double lasvm_get_w2(lasvm_t *self)
 }
 
 double 
-lasvm_predict(lasvm_t *self, int xi)
+lasvm_predict(lasvm_t *self, long xi)
 {
-  int l = self->l;
+  long l = self->l;
   float *row = lasvm_kcache_query_row(self->kernel, xi, l);
   real_t *alpha = self->alpha;
   real_t s = 0;
@@ -610,7 +610,7 @@ lasvm_predict(lasvm_t *self, int xi)
   s = cblas_sdot(l, alpha, 1, row, 1);
 #else
   {
-    int j;
+    long j;
     for (j=0; j<l; j++)
       s += alpha[j] * row[j];
   }
@@ -621,21 +621,21 @@ lasvm_predict(lasvm_t *self, int xi)
 }
 
 double 
-lasvm_predict_nocache(lasvm_t *self, int xi)
+lasvm_predict_nocache(lasvm_t *self, long xi)
 { 
-  int cached = lasvm_kcache_status_row(self->kernel, xi);
+  long cached = lasvm_kcache_status_row(self->kernel, xi);
   real_t s = lasvm_predict(self, xi);
   if (! cached) /* do not keep what was not cached */
     lasvm_kcache_discard_row(self->kernel, xi);
   return s;
 }
 
-void lasvm_init( lasvm_t *self, int l, 
-                 const int *sv, 
+void lasvm_init( lasvm_t *self, long l, 
+                 const long *sv, 
                  const double *alpha, 
                  const double *g )
 {
-  int i,k;
+  long i,k;
   if (l <= 0)
     lasvm_error("Argument l should be positive.\n");
   checksize(self, l);
@@ -665,7 +665,7 @@ void lasvm_init( lasvm_t *self, int l,
     }
   if (! g)
     {
-      int *r2i = lasvm_kcache_r2i(self->kernel, k);
+      long *r2i = lasvm_kcache_r2i(self->kernel, k);
       for (i=0; i<k; i++)
         {
           real_t s = self->g[i];
@@ -674,7 +674,7 @@ void lasvm_init( lasvm_t *self, int l,
           s -= cblas_sdot(k, self->alpha, 1, row, 1);
 #else
           {
-            int j;
+            long j;
             for (j=0; j<k; j++)
               s -= self->alpha[j] * row[j];
           }

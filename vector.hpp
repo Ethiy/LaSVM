@@ -15,7 +15,7 @@
 
 typedef std::vector< double > lasvm_vector_t;
 
-lasvm_vector_t lasvm_vector_create(int size);
+lasvm_vector_t lasvm_vector_create( unsigned long size);
 
 std::string lasvm_vector_print(lasvm_vector_t v);
 
@@ -26,9 +26,9 @@ double lasvm_vector_dot_product(lasvm_vector_t v1, lasvm_vector_t v2);
 /* SPARSE VECTORS */
 
 
-typedef std::map< int , double > lasvm_sparsevector_t;
+typedef std::map<  unsigned long , double > lasvm_sparsevector_t;
 
-double lasvm_sparsevector_get(lasvm_sparsevector_t v, int attribute);
+double lasvm_sparsevector_get(lasvm_sparsevector_t v,  unsigned long attribute);
 
 std::string lasvm_sparsevector_print( lasvm_sparsevector_t v );
 

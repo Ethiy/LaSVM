@@ -14,24 +14,24 @@
 /* ------------------------------------- */
 /* SIMPLE VECTORS */
 
-lasvm_vector_t lasvm_vector_create(int size){
+lasvm_vector_t lasvm_vector_create(unsigned long size){
   std::vector< double > *v = new std::vector< double >(size);
   return *v;
 }
 
 std::string lasvm_vector_print(lasvm_vector_t v){
     std::string s( "" ) ;
-    for( unsigned int iter = 0; iter < v.size() ; iter++)
+    for( unsigned long iter = 0; iter < v.size() ; iter++)
         s.append(" ").append(  boost::lexical_cast<std::string>( iter ) ).append(":").append(  boost::lexical_cast<std::string>( v[iter] ) ) ;   
     return s.append("\n");
 }
 
 double lasvm_vector_dot_product(lasvm_vector_t v1, lasvm_vector_t v2){
-  int min_size = min( v1.size(), v2.size() );
+  unsigned long min_size = min( v1.size(), v2.size() );
 
   double dot_product = 0;
 
-  for (int i=0; i<min_size ; i++)
+  for (unsigned long i=0; i<min_size ; i++)
     dot_product += v1[i] * v2[i];
   return dot_product;
 }
@@ -42,7 +42,7 @@ double lasvm_vector_dot_product(lasvm_vector_t v1, lasvm_vector_t v2){
 /* SPARSE VECTORS */
 
 
-double lasvm_sparsevector_get(lasvm_sparsevector_t v, int attribute){
+double lasvm_sparsevector_get(lasvm_sparsevector_t v, unsigned long attribute){
   return v[ attribute ];
 }
 

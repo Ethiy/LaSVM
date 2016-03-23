@@ -29,7 +29,7 @@ void lasvm_destroy( lasvm_t *self );
 /* --- lasvm_get_l
    Returns the number of support vectors.
 */
-int lasvm_get_l( lasvm_t *self );
+long lasvm_get_l( lasvm_t *self );
 
 /* --- lasvm_process
    Perform the PROCESS operation on example with index <xi>.
@@ -38,14 +38,14 @@ int lasvm_get_l( lasvm_t *self );
    Otherwise returns zero.
 */
 
-int lasvm_process( lasvm_t *self, int xi, double y );
+long lasvm_process( lasvm_t *self, long xi, double y );
 
 /* --- lasvm_reprocess
    Performs the REPROCESS operation with a tolerance <epsgr>
    on the gradients. Returns the number of SVs if a change 
    has been made. Otherwise returns zero. 
 */
-int lasvm_reprocess(lasvm_t *self, double epsgr);
+long lasvm_reprocess(lasvm_t *self, double epsgr);
 
 /* --- lasvm_finish
    Specialized version of REPROCESS used for the finishing step.
@@ -54,7 +54,7 @@ int lasvm_reprocess(lasvm_t *self, double epsgr);
    faster because it performs the shrinking optimization.
    Returns the number of iterations.
 */
-int lasvm_finish(lasvm_t *self, double epsgr);
+long lasvm_finish(lasvm_t *self, double epsgr);
 
 /* -- lasvm_get_cp, lasvm_get_cn
    Returns the values of parameter C for positive 
@@ -75,19 +75,19 @@ double lasvm_get_delta(lasvm_t *self);
    Coefficients are positive for positive example
    and negative for negative examples.
 */
-int lasvm_get_alpha(lasvm_t *self, double *alpha);
+long lasvm_get_alpha(lasvm_t *self, double *alpha);
 
 /* --- lasvm_get_alpha
    Returns the support vector indices into array <sv>.
    Similar information can be obtained using <lasvm_kcache_r2i>.
 */
-int lasvm_get_sv(lasvm_t *self, int *sv);
+long lasvm_get_sv(lasvm_t *self, long *sv);
 
 /* --- lasvm_get_g
    Returns the gradient of the dual objective function
    with respect to each support vector coefficient.
 */
-int lasvm_get_g(lasvm_t *self, double *g);
+long lasvm_get_g(lasvm_t *self, double *g);
 
 /* --- lasvm_get_b
    Returns the value of the bias term. 
@@ -103,13 +103,13 @@ double lasvm_get_w2(lasvm_t *self);
    Computes the kernel expansion on example with index <xi>
    and returns the result.
 */
-double lasvm_predict(lasvm_t *self, int xi);
+double lasvm_predict(lasvm_t *self, long xi);
 
 /* --- lasvm_predict_nocache
    Same as <lasvm_predict> but does not mark the corresponding
    kernel values as recently used. 
 */
-double lasvm_predict_nocache(lasvm_t *self, int xi);
+double lasvm_predict_nocache(lasvm_t *self, long xi);
 
 /* --- lasvm_init
    Resets the state of lasvm to known values.
@@ -122,8 +122,8 @@ double lasvm_predict_nocache(lasvm_t *self, int xi);
    of each example. That does not work if <alpha>
    is zero. Such support vectors are eliminated...
 */
-void lasvm_init( lasvm_t *self, int l, 
-                 const int *sv, 
+void lasvm_init( lasvm_t *self, long l, 
+                 const long *sv, 
                  const double *alpha, 
                  const double *g );
 
