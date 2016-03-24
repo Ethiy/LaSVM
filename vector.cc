@@ -27,7 +27,7 @@ std::string lasvm_vector_print(lasvm_vector_t v){
 }
 
 double lasvm_vector_dot_product(lasvm_vector_t v1, lasvm_vector_t v2){
-  unsigned long min_size = min( v1.size(), v2.size() );
+  unsigned long min_size = static_cast<unsigned long>( min( v1.size(), v2.size() ) );
 
   double dot_product = 0;
 
@@ -57,7 +57,7 @@ lasvm_sparsevector_t lasvm_sparsevector_combine(lasvm_sparsevector_t v1, double 
   lasvm_sparsevector_t r ;
   lasvm_sparsevector_t::iterator iterator_1 = v1.begin();
   lasvm_sparsevector_t::iterator iterator_2 = v2.begin();
-  while( iterator_1 != v1.end() and iterator_2 != v2.end() ){
+  while( iterator_1 != v1.end() && iterator_2 != v2.end() ){
 
     if (iterator_1->first < iterator_2->first){
       r[ iterator_1->first ] = coeff1 * iterator_1->second;
@@ -99,7 +99,7 @@ double lasvm_sparsevector_dot_product(lasvm_sparsevector_t v1, lasvm_sparsevecto
   lasvm_sparsevector_t::iterator iterator_1 = v1.begin();
   lasvm_sparsevector_t::iterator iterator_2 = v2.begin();
 
-  while( iterator_1 != v1.end() and iterator_2 != v2.end() ){
+  while( iterator_1 != v1.end() && iterator_2 != v2.end() ){
 
     if (iterator_1->first < iterator_2->first)
       iterator_1 ++;

@@ -108,7 +108,7 @@ double lasvm_kcache_query(lasvm_kcache_t *self, long i, long j);
    and vice-versa.
 */
 
-float *lasvm_kcache_query_row(lasvm_kcache_t *self, long i, long len);
+double *lasvm_kcache_query_row(lasvm_kcache_t *self, long i, long len);
 
 /* --- lasvm_kcache_status_row
    Returns the number of cached entries for row i.

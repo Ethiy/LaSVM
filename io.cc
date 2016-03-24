@@ -4,6 +4,8 @@
 #include <iostream>
 #include <fstream>
 
+#include <vector>
+
 #include <boost/algorithm/string.hpp>
 
 #include "io.hpp"
@@ -12,8 +14,8 @@
 using namespace std;
 
 
-vector<ID> split_file_load( char* split_file_name , int& is_binary_file ){
-    vector< ID > splits;
+map<long,int> split_file_load( char* split_file_name , int& is_binary_file ){
+    map<long , int> splits;
     int instance_index_in = 0;
     int labels_in = 0;
 
@@ -68,10 +70,10 @@ vector<ID> split_file_load( char* split_file_name , int& is_binary_file ){
             getline( split_file , buffer_line );
             strings.clear();
             boost::split(strings , buffer_line , boost::is_any_of("\t "));
-            index =  atol( strings[0].c_str() );
+            index =  stol( strings[0].c_str() );
             if( label )
-                label = atoi( strings[1].c_str() );
-            splits.push_back(ID( index-1 , label )); // C++ starts from 0
+                label = stoi( strings[1].c_str() );
+            splits[ index-1 ] = label ; // C++ starts from 0
             line_num ++;
         }
         split_file.close();

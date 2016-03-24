@@ -36,3 +36,4 @@ lasvm_sparsevector_t lasvm_sparsevector_combine(lasvm_sparsevector_t v1, double 
 
 double lasvm_sparsevector_dot_product(lasvm_sparsevector_t v1, lasvm_sparsevector_t v2);
 
+#endif

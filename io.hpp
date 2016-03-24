@@ -1,7 +1,7 @@
 #ifndef IO_H
 #define IO_H
 
-#include <vector>
+#include <map>
 
 class ID{ // class to hold split file indices and labels
 public:
@@ -16,4 +16,8 @@ bool operator<(const ID& x, const ID& y){
     return x.x < y.x;
 }
 
-vector<ID> split_file_load( char* file_name , int& is_binary_file , int& instance_index_in , int& labels_in );
+using namespace std;
+
+map<long , int> split_file_load( char* file_name , int& is_binary_file , int& instance_index_in , int& labels_in );
+
+#endif
