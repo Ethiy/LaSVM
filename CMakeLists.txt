@@ -1,8 +1,5 @@
-<<<<<<< HEAD
 cmake_minimum_required(VERSION 3.4)
 include(CheckCXXCompilerFlag)
-=======
->>>>>>> parent of 44fd766... fix build
 project(LaSVM CXX C)
 
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -51,8 +48,23 @@ else()
   endif(CHECK_CXX_COMPILER_USED2)
 endif(CHECK_CXX_COMPILER_USED1)
 
+# Boost
+
+FIND_PACKAGE(Boost)
+IF (Boost_FOUND)
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+    ADD_DEFINITIONS( "-DHAS_BOOST" )
+ELSE()
+    SET(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "C:/local/boost_1_60_0/lib64-msvc-14.0")
+    SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "C:/local/boost_1_60_0/lib64-msvc-14.0")
+    Find_PACKAGE( Boost )
+ENDIF()
 
 #TOOLS
+file(GLOB_RECURSE LaSVM_TOOLS_HEADERS
+	"${LaSVM_SOURCE_DIR}/*.h"
+)
+
 file(GLOB_RECURSE LaSVM_TOOLS_HEADERS
 	"${LaSVM_SOURCE_DIR}/*.hpp"
 )
@@ -61,7 +73,14 @@ file(GLOB_RECURSE LaSVM_TOOLS_SRC
 	"${LaSVM_SOURCE_DIR}/*.c"
 )
 
-add_library(Tools ${LaSVM_TOOLS_HEADERS} ${LaSVM_TOOLS_SRC})
+file(GLOB_RECURSE LaSVM_TOOLS_SRC
+	"${LaSVM_SOURCE_DIR}/*.cc"
+)
+
+add_library(lasvm ${LaSVM_TOOLS_HEADERS} ${LaSVM_TOOLS_SRC})
+target_link_libraries (lasvm
+		${Boost_LIBRARIES}
+	)
 
 if(CHECK_CXX_COMPILER_USED_TOOLS)
 
@@ -71,26 +90,30 @@ elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
   # using Intel C++
 else()
   # GCC or Clang
-	target_link_libraries (Tools
+	target_link_libraries (lasvm
 		m
 	)
 endif(CHECK_CXX_COMPILER_USED_TOOLS)
 
 #Binaries
-# Training
-file(GLOB_RECURSE LaSVM_Training_HEADERS
+# la_train
+file(GLOB_RECURSE LaSVM_la_train_HEADERS
 )
 
-file(GLOB_RECURSE LaSVM_Training_SRC
-	"la_svm.cpp"
+file(GLOB_RECURSE LaSVM_la_train_SRC
+	"la_test.cpp"
 )
 
-add_executable(la_svm ${LaSVM_TOOLS_HEADERS} ${LaSVM_Training_HEADERS} ${LaSVM_Training_SRC})
-target_link_libraries (la_svm
-	Tools
+add_executable(la_train ${LaSVM_TOOLS_HEADERS} ${LaSVM_la_train_HEADERS} ${LaSVM_la_train_SRC})
+target_link_libraries (la_train
+	lasvm
 )
+target_link_libraries (la_train
+		${Boost_LIBRARIES}
+	)
 
-if(CHECK_CXX_COMPILER_USED_Training)
+
+if(CHECK_CXX_COMPILER_USED_la_train)
 
 elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
   # using Visual Studio C++
@@ -98,25 +121,29 @@ elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
   # using Intel C++
 else()
   # GCC or Clang
-	target_link_libraries (la_svm
+	target_link_libraries (la_train
 		m
 	)
-endif(CHECK_CXX_COMPILER_USED_Training)
+endif(CHECK_CXX_COMPILER_USED_la_train)
 
-# Test
-file(GLOB_RECURSE LaSVM_Test_HEADERS
+# la_test
+file(GLOB_RECURSE LaSVM_la_test_HEADERS
 )
 
-file(GLOB_RECURSE LaSVM_Test_SRC
+file(GLOB_RECURSE LaSVM_la_test_SRC
 	"la_test.cpp"
 )
 
-add_executable(la_test ${LaSVM_TOOLS_HEADERS} ${LaSVM_Test_HEADERS} ${LaSVM_Test_SRC})
+add_executable(la_test ${LaSVM_TOOLS_HEADERS} ${LaSVM_la_test_HEADERS} ${LaSVM_la_test_SRC})
 target_link_libraries (la_test
-	Tools
+	lasvm
 )
+target_link_libraries (la_test
+		${Boost_LIBRARIES}
+	)
 
-if(CHECK_CXX_COMPILER_USED_Test)
+
+if(CHECK_CXX_COMPILER_USED_la_test)
 
 elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
   # using Visual Studio C++
@@ -127,7 +154,7 @@ else()
 	target_link_libraries (la_test
 		m
 	)
-endif(CHECK_CXX_COMPILER_USED_Test)
+endif(CHECK_CXX_COMPILER_USED_la_test)
 
 # Converter LIBSVM2BIN
 file(GLOB_RECURSE LaSVM_LIBSVM2BIN_HEADERS
@@ -137,10 +164,14 @@ file(GLOB_RECURSE LaSVM_LIBSVM2BIN_SRC
 	"libsvm2bin.cpp"
 )
 
-add_executable(LIBSVM2BIN ${LaSVM_TOOLS_HEADERS} ${LaSVM_LIBSVM2BIN_HEADERS} ${LaSVM_LIBSVM2BIN_SRC})
-target_link_libraries (LIBSVM2BIN
-	Tools
+add_executable(libsvm2bin ${LaSVM_TOOLS_HEADERS} ${LaSVM_LIBSVM2BIN_HEADERS} ${LaSVM_LIBSVM2BIN_SRC})
+target_link_libraries (libsvm2bin
+	lasvm
 )
+target_link_libraries (libsvm2bin
+		${Boost_LIBRARIES}
+	)
+
 
 if(CHECK_CXX_COMPILER_USED_LIBSVM2BIN)
 
@@ -150,7 +181,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
   # using Intel C++
 else()
   # GCC or Clang
-	target_link_libraries (LIBSVM2BIN
+	target_link_libraries (libsvm2bin
 		m
 	)
 endif(CHECK_CXX_COMPILER_USED_LIBSVM2BIN)
@@ -163,10 +194,14 @@ file(GLOB_RECURSE LaSVM_BIN2LIBSVM_SRC
 	"bin2libsvm.cpp"
 )
 
-add_executable(BIN2LIBSVM ${LaSVM_TOOLS_HEADERS} ${LaSVM_BIN2LIBSVM_HEADERS} ${LaSVM_BIN2LIBSVM_SRC})
-target_link_libraries (BIN2LIBSVM
-	Tools
+add_executable(bin2libsvm ${LaSVM_TOOLS_HEADERS} ${LaSVM_BIN2LIBSVM_HEADERS} ${LaSVM_BIN2LIBSVM_SRC})
+target_link_libraries (bin2libsvm
+	lasvm
 )
+target_link_libraries (bin2libsvm
+		${Boost_LIBRARIES}
+	)
+
 
 if(CHECK_CXX_COMPILER_USED_BIN2LIBSVM)
 
@@ -176,7 +211,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
   # using Intel C++
 else()
   # GCC or Clang
-	target_link_libraries (BIN2LIBSVM
+	target_link_libraries (bin2libsvm
 		m
 	)
 endif(CHECK_CXX_COMPILER_USED_BIN2LIBSVM)
