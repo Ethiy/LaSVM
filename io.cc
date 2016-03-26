@@ -64,14 +64,14 @@ map<long,int> split_file_load( char* split_file_name , int& is_binary_file ){
         int label;
         long index;
         while( split_file.peek() != EOF ){
-            cout << "line_num : " << line_num << endl;
+            cout << "line_number : " << line_num - 3 << endl;
             label =0;
             index = 0;
             getline( split_file , buffer_line );
             strings.clear();
             boost::split(strings , buffer_line , boost::is_any_of("\t "));
             index =  stol( strings[0].c_str() );
-            if( label )
+            if( labels_in )
                 label = stoi( strings[1].c_str() );
             splits[ index-1 ] = label ; // C++ starts from 0
             line_num ++;
@@ -80,7 +80,8 @@ map<long,int> split_file_load( char* split_file_name , int& is_binary_file ){
     }
 
     else{
-        cout << "Could not load split file:" << split_file_name << endl; 
+        cerr << "Could not load split file:" << split_file_name << endl; 
         exit( EXIT_FAILURE );
     }
+	return splits;
 }
