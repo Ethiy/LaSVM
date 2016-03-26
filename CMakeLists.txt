@@ -36,7 +36,9 @@ else()
   else()
       message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
   endif(COMPILER_SUPPORTS_CXX17)
+
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+
   if(CHECK_CXX_COMPILER_USED2)
   elseif("${CMAKE_CXX_COMPILER_ID}x" MATCHES "Clangx")
     # using Clang
@@ -48,28 +50,27 @@ else()
   endif(CHECK_CXX_COMPILER_USED2)
 endif(CHECK_CXX_COMPILER_USED1)
 
-# Boost
-
+#Boost
 FIND_PACKAGE(Boost)
-IF (Boost_FOUND)
+if(Boost_FOUND)
     INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
     ADD_DEFINITIONS( "-DHAS_BOOST" )
-ELSE()
-    SET(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "C:/local/boost_1_60_0/")
-    SET(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "C:/local/boost_1_60_0/lib64-msvc-14.0")
+else()
+    set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "C:/local/boost_1_60_0/")
+    set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "C:/local/boost_1_60_0/lib64-msvc-14.0")
     Find_PACKAGE( Boost )
-ENDIF()
+endif()
 
-#TOOLS
+#LaSVM_TOOLS
 file(GLOB_RECURSE LaSVM_TOOLS_HEADERS
-	"${LaSVM_SOURCE_DIR}/*.h" "${LaSVM_SOURCE_DIR}/*.hpp"
+	"${LaSVM_SOURCE_DIR}/src/lasvm/*.h" "${LaSVM_SOURCE_DIR}/src/lasvm/*.hpp"
 )
 
 file(GLOB_RECURSE LaSVM_TOOLS_SRC
-	"${LaSVM_SOURCE_DIR}/*.c" "${LaSVM_SOURCE_DIR}/*.cc"
+	"${LaSVM_SOURCE_DIR}/src/lasvm/*.c" "${LaSVM_SOURCE_DIR}/src/lasvm/*.cc"
 )
 
-add_library(lasvm ${LaSVM_TOOLS_HEADERS} ${LaSVM_TOOLS_SRC})
+add_library(lasvm ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_TOOLS_HEADERS} ${LaSVM_TOOLS_SRC})
 target_link_libraries (lasvm
 		${Boost_LIBRARIES}
 	)
@@ -87,18 +88,72 @@ else()
 	)
 endif(CHECK_CXX_COMPILER_USED_TOOLS)
 
+#LaSVM_IN/OUT
+file(GLOB_RECURSE LaSVM_IN_OUT_HEADERS
+	"${LaSVM_SOURCE_DIR}/src/io/*.hpp"
+)
+
+file(GLOB_RECURSE LaSVM_IN_OUT_SRC
+	"${LaSVM_SOURCE_DIR}/src/io/*.cc"
+)
+
+add_library(io ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_IN_OUT_HEADERS} ${LaSVM_IN_OUT_SRC})
+target_link_libraries (io
+		lasvm ${Boost_LIBRARIES}
+	)
+
+if(CHECK_CXX_COMPILER_USED_TOOLS)
+
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
+  # using Visual Studio C++
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
+  # using Intel C++
+else()
+  # GCC or Clang
+	target_link_libraries (io
+		m
+	)
+endif(CHECK_CXX_COMPILER_USED_TOOLS)
+
+#LaSVM_TEST
+file(GLOB_RECURSE LaSVM_TEST_HEADERS
+	"${LaSVM_SOURCE_DIR}/test/*.hpp"
+)
+
+file(GLOB_RECURSE LaSVM_TEST_SRC
+	"${LaSVM_SOURCE_DIR}/test/*.cc"
+)
+
+add_executable(tests ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_TOOLS_HEADERS} ${LaSVM_IN_OUT_HEADERS} ${LaSVM_TEST_HEADERS} ${LaSVM_TEST_SRC})
+target_link_libraries (tests
+		lasvm io ${Boost_LIBRARIES}
+	)
+
+if(CHECK_CXX_COMPILER_USED_TOOLS)
+
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "MSVCx")
+  # using Visual Studio C++
+elseif("${CMAKE_CXX_COMPILER_ID}x" STREQUAL "Intelx")
+  # using Intel C++
+else()
+  # GCC or Clang
+	target_link_libraries (tests
+		m
+	)
+endif(CHECK_CXX_COMPILER_USED_TOOLS)
+
 #Binaries
-# la_train
+#la_train
 file(GLOB_RECURSE LaSVM_la_train_HEADERS
 )
 
 file(GLOB_RECURSE LaSVM_la_train_SRC
-	"la_test.cpp"
+	"${LaSVM_SOURCE_DIR}/src/run/la_train.cpp"
 )
 
-add_executable(la_train ${LaSVM_TOOLS_HEADERS} ${LaSVM_la_train_HEADERS} ${LaSVM_la_train_SRC})
+add_executable(la_train ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_TOOLS_HEADERS} ${LaSVM_IN_OUT_HEADERS} ${LaSVM_la_train_HEADERS} ${LaSVM_la_train_SRC})
 target_link_libraries (la_train
-	lasvm
+	lasvm io
 )
 target_link_libraries (la_train
 		${Boost_LIBRARIES}
@@ -123,12 +178,12 @@ file(GLOB_RECURSE LaSVM_la_test_HEADERS
 )
 
 file(GLOB_RECURSE LaSVM_la_test_SRC
-	"la_test.cpp"
+	"${LaSVM_SOURCE_DIR}/src/run/la_test.cpp"
 )
 
-add_executable(la_test ${LaSVM_TOOLS_HEADERS} ${LaSVM_la_test_HEADERS} ${LaSVM_la_test_SRC})
+add_executable(la_test ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_TOOLS_HEADERS} ${LaSVM_IN_OUT_HEADERS} ${LaSVM_la_test_HEADERS} ${LaSVM_la_test_SRC})
 target_link_libraries (la_test
-	lasvm
+	lasvm io
 )
 target_link_libraries (la_test
 		${Boost_LIBRARIES}
@@ -153,12 +208,12 @@ file(GLOB_RECURSE LaSVM_LIBSVM2BIN_HEADERS
 )
 
 file(GLOB_RECURSE LaSVM_LIBSVM2BIN_SRC
-	"libsvm2bin.cpp"
+	"${LaSVM_SOURCE_DIR}/src/utils/libsvm2bin.cpp"
 )
 
-add_executable(libsvm2bin ${LaSVM_TOOLS_HEADERS} ${LaSVM_LIBSVM2BIN_HEADERS} ${LaSVM_LIBSVM2BIN_SRC})
+add_executable(libsvm2bin ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_TOOLS_HEADERS} ${LaSVM_IN_OUT_HEADERS} ${LaSVM_LIBSVM2BIN_HEADERS} ${LaSVM_LIBSVM2BIN_SRC})
 target_link_libraries (libsvm2bin
-	lasvm
+	lasvm io
 )
 target_link_libraries (libsvm2bin
 		${Boost_LIBRARIES}
@@ -183,12 +238,12 @@ file(GLOB_RECURSE LaSVM_BIN2LIBSVM_HEADERS
 )
 
 file(GLOB_RECURSE LaSVM_BIN2LIBSVM_SRC
-	"bin2libsvm.cpp"
+	"${LaSVM_SOURCE_DIR}/src/utils/bin2libsvm.cpp"
 )
 
-add_executable(bin2libsvm ${LaSVM_TOOLS_HEADERS} ${LaSVM_BIN2LIBSVM_HEADERS} ${LaSVM_BIN2LIBSVM_SRC})
+add_executable(bin2libsvm ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_TOOLS_HEADERS} ${LaSVM_IN_OUT_HEADERS} ${LaSVM_BIN2LIBSVM_HEADERS} ${LaSVM_BIN2LIBSVM_SRC})
 target_link_libraries (bin2libsvm
-	lasvm
+	lasvm io
 )
 target_link_libraries (bin2libsvm
 		${Boost_LIBRARIES}
