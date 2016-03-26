@@ -9,9 +9,9 @@ using namespace std;
 #include <vector>
 #include <cmath>
 
-#include "vector.h"
+#include "vector.hpp"
 
-vector <lasvm_sparsevector_t*> X; // feature vectors
+vector <lasvm_sparsevector_t> X; // feature vectors
 vector <int> Y;                   // labels
 int m;                            // number of examples
 int sparse=1;
@@ -39,7 +39,7 @@ int binary_load_data(char *filename)
     
     for(i=0;i<msz;i++) 
     {
-        v=lasvm_sparsevector_create(); 
+        lasvm_sparsevector_t v; 
         X.push_back(v);
         if(nonsparse) // non-sparse binary file
         {
@@ -47,7 +47,7 @@ int binary_load_data(char *filename)
             Y.push_back(sz[0]);
             f.read((char*)(&val[0]),max_index*sizeof(float));
             for(j=0;j<max_index;j++) // set features for each example
-                lasvm_sparsevector_set(v,j,val[j]);
+                v[ j ] = val[j];
         }
         else			// sparse binary file
         {
@@ -60,7 +60,7 @@ int binary_load_data(char *filename)
             for(j=0;j<sz[1];j++) // set features for each example
             {
                 if (val[j]!=0)
-                    lasvm_sparsevector_set(v,ind[j],val[j]);
+                    v[ ind[j] ] = val[j];
                 if(ind[j]>max_index)
                     max_index=ind[j];
             }
@@ -82,7 +82,7 @@ void libsvm_save(char *fname)
     {
         fprintf(f,"%d", (int) Y[i]);
         lasvm_sparsevector_pair_t *p = X[i]->pairs;
-        while (p )
+        while ( p )
         { 
             if(p->index>max_index)
             {
