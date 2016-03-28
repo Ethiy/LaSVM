@@ -94,7 +94,7 @@ file(GLOB_RECURSE LaSVM_IN_OUT_HEADERS
 )
 
 file(GLOB_RECURSE LaSVM_IN_OUT_SRC
-	"${LaSVM_SOURCE_DIR}/src/io/*.cc"
+	"${LaSVM_SOURCE_DIR}/src/io/*.c*"
 )
 
 add_library(io ${Boost_INCLUDE_DIR} ${Boost_LIBRARY_DIR} ${LaSVM_IN_OUT_HEADERS} ${LaSVM_IN_OUT_SRC})
