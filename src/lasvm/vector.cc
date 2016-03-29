@@ -116,4 +116,8 @@ double lasvm_sparsevector_dot_product(lasvm_sparsevector_t v1, lasvm_sparsevecto
   return dot_product;
 }
 
+double lasvm_sparsevector_square(lasvm_sparsevector_t v1) {
+	return lasvm_sparsevector_dot_product(v1, v1);
+}
+
 

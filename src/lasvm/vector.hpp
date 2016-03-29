@@ -35,5 +35,6 @@ std::string lasvm_sparsevector_print( lasvm_sparsevector_t v );
 lasvm_sparsevector_t lasvm_sparsevector_combine(lasvm_sparsevector_t v1, double coeff1, lasvm_sparsevector_t v2, double coeff2);
 
 double lasvm_sparsevector_dot_product(lasvm_sparsevector_t v1, lasvm_sparsevector_t v2);
+double lasvm_sparsevector_square(lasvm_sparsevector_t v1);
 
 #endif

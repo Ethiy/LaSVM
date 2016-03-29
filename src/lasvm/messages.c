@@ -61,6 +61,6 @@ void lasvm_debug(const char *fmt, ...){
   va_end(ap); 
 }
 
-void lasvm_assertfail(const char *file,long line){
+void lasvm_assertfail(const char *file,unsigned long line){
   lasvm_error("Assertion failed: %s:%ld\n", file, line);
 }

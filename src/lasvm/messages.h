@@ -60,7 +60,7 @@ extern void lasvm_debug(const char *fmt, ...);
                    } while(0)
 #endif
 
-void lasvm_assertfail(const char *file,long line);
+void lasvm_assertfail(const char *file,unsigned long line);
 
 
 #ifdef __cplusplus__
