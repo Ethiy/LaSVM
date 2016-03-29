@@ -7,8 +7,12 @@
 #include <numeric>
 #include <algorithm>
 
+#include <string>
 #include <iostream>
 #include <fstream>
+#include <sstream>
+
+//#include <boost/lexical_cast.hpp>
 
 #include "../lasvm/vector.hpp"
 #include "../lasvm/lasvm.h"
@@ -77,16 +81,16 @@ vector <double> x_square;         // norms of input vectors, used for RBF
 
 /* Programm behaviour*/
 int verbosity=1;                  // verbosity level, 0=off
-int saves=1;
-string report_file_name;             // filename for the training report
+int saves = 1;
 string split_file_name("");         // filename for the splits
 int cache_size=256;                       // 256Mb cache size as default
 double epsilon_gradient=1e-3;                       // tolerance on gradients
 unsigned long long kernel_evaluation_counter=0;                      // number of kernel evaluations
 int is_binary=0;
 map<unsigned long , int> splits;
-vector <int> iold, inew;		  // sets of old (already seen) points + new (unseen) points
+vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
 int termination_type=0;
+unsigned long number_of_sv = 0;
 
 
 void exit_with_help()
@@ -238,75 +242,38 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 }
 
 
-unsigned long count_svs(vector<double> alpha, unsigned long& sv_positif, 
-						unsigned long& sv_negatif, double& max_alpha, double& alpha_tolerance){
-	max_alpha = max<double>( -*(min_element(alpha.begin(),alpha.end())) , *(max_element(alpha.begin(),alpha.end())) );
-       
-    alpha_tolerance = max_alpha/1000.0;
-	vector <double> tmp;
-	remove_copy_if(alpha.begin(), alpha.end(), tmp.begin(), [](const int& x) {
-		return x > 10;);
-	sv_positif = distance(alpha.upper_bound(alpha_tolerance), alpha.end());
-	sv_negatif = distance(alpha.lower_bound(-alpha_tolerance), alpha.begin());
-
-    return sv_positif + sv_negatif;
-}
-
-
-int libsvm_save_model(const char *model_file_name, vector<double> alpha){
+int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, unsigned long *svind){
     // saves the model in the same format as LIBSVM
 	ofstream model;
 	model.open(model_file_name);
 
-	unsigned long  sv_positif(0), sv_negatif(0);
-	double max_alpha(0), alpha_tolerance(0);
-
 	if (model.is_open()) {
-		unsigned long number_of_sv = count_svs(alpha, sv_positif, sv_negatif, max_alpha, alpha_tolerance);
-		model << "svm_type c_svc" << endl;
-		model << "kernel_type" << kernel_type_table[kernel_type] << endl;
+		model << "Svm_type: C_svc" << endl;
+		model << "Kernel_type: " << kernel_type_table[kernel_type] << endl;
 		if (kernel_type == POLY)
-			model << "degree" << degree << endl;
+			model << "degree = " << degree << endl;
 
 		if (kernel_type == POLY || kernel_type == RBF || kernel_type == SIGMOID)
-			model << "gamma" << kgamma << endl;
+			model << "gamma = " << kgamma << endl;
 
 		if (kernel_type == POLY || kernel_type == SIGMOID)
-			model << "coef0" << coef0;
+			model << "coef0 = " << coef0;
 
-		model << "nr_class" << 2 << endl;
-		model << "total_sv" << number_of_sv << endl;
+		model << "Number of classes: " << 2 << endl;
+		model << "Number of support vectors: " << number_of_sv << endl;
 		model << "rho" << threshold << endl;
-		model << "label " << 1 << " " << -1 << endl;
-		model << "nr_sv " << sv_positif << " " << sv_negatif << endl;
+		model << "Labels: " << 1 << " " << -1 << endl;
 		model << "SV:" << endl;
+		for (unsigned long iter; iter < number_of_sv; iter++)
+			model << Y[svind[iter]] << lasvm_sparsevector_print(X[svind[iter]]);
+		model.close();
+		return 0;
 	}
 	else
 		return -1;
-	
-    for(int j=0;j<2;j++)
-        for(int i=0;i<m;i++)
-        {
-            if (j==0 && Y[i]==-1) continue;
-            if (j==1 && Y[i]==1) continue;
-            if (alpha[i]*Y[i]< alpha_tol) continue; // not an SV
-	    
-            fprintf(fp, "%.16g ",alpha[i]);
-
-            lasvm_sparsevector_pair_t *p1 = X[i]->pairs;
-            while (p1)
-            {          
-                fprintf(fp,"%d:%.8g ",p1->index,p1->data);
-                p1 = p1->next;
-            }
-            fprintf(fp, "\n");
-        }
-
-    fclose(fp);
-    return 0;
 }
 
-double kernel(int i, int j, void *kparam){
+double kernel(unsigned long i, unsigned long j, void *kparam){
     double dot_product = lasvm_sparsevector_dot_product(X[i], X[j]);
     kernel_evaluation_counter++;
     
@@ -326,13 +293,13 @@ double kernel(int i, int j, void *kparam){
   
 
 
-void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<double>& alpha){
+void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<double>& alpha, unsigned long* svind){
 	unsigned long i;
 
-    if (optimizer==ONLINE_WITH_FINISHING){
+    if (optimizer == ONLINE_WITH_FINISHING){
 		cout << "..[finishing]";
-        unsigned long iter=0;
 
+        unsigned long iter=0;
         do { 
             iter += lasvm_finish(sv, epsilon_gradient); 
         } while (lasvm_get_delta(sv)>epsilon_gradient);
@@ -341,7 +308,7 @@ void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<
 
     number_of_sv= lasvm_get_l(sv);
     unsigned long svs;
-	unsigned long *svind = new  unsigned long[number_of_sv];
+	svind = new  unsigned long[number_of_sv];
     svs = lasvm_get_sv(sv,svind); 
 	fill(alpha.begin(), alpha.end(), 0);
 
@@ -354,21 +321,15 @@ void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<
 
 
 
-void make_old(int val)
+void make_old(unsigned long val, vector <unsigned long>& inew, vector<unsigned long>& iold){
     // move index <val> from new set into old set
-{
-    int i,ind=-1;
-    for(i=0;i<(int)inew.size();i++)
-    {
-        if(inew[i]==val) {ind=i; break;}
-    }
-
-    if (ind>=0)
-    {
-        inew[ind]=inew[inew.size()-1];
-        inew.pop_back();
-        iold.push_back(val);
-    }
+	vector<unsigned long>::iterator iter = find(inew.begin(), inew.end(), val);
+	if (iter != inew.end() || (iter == inew.end() && *inew.end() == val)) {
+		unsigned long ind = distance(inew.begin(), iter);
+		inew[ind] = inew[inew.size() - 1];
+		inew.pop_back();
+		iold.push_back(val);
+	}
 }
 
 
@@ -433,8 +394,9 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 }
 
 
-void train_online(char *model_file_name){
-    unsigned long t1,t2=0,i,selected,number_of_sv,j,k;
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind){
+	unsigned long n_process(0), n_reprocess(0);
+	unsigned long selected(0);
     double timer=0;
     stopwatch *sw; // start measuring time after loading is finished
     sw=new stopwatch;    // save timing information
@@ -452,49 +414,48 @@ void train_online(char *model_file_name){
     
     // first add 5 examples of each class, just to balance the initial set
     int c1=0,c2=0;
-    for(i=0; i<number_of_instances; i++){
+    for(unsigned long i=0; i<number_of_instances; i++){
         if(Y[i]==1 && c1<5) {
 			lasvm_process(sv,i,static_cast<double>(Y[i]) ); 
 			c1++; 
-			make_old(i);
+			make_old(i, inew, iold);
 		}
         if(Y[i]==-1 && c2<5){
 			lasvm_process(sv,i, static_cast<double>(Y[i]) );
 			c2++; 
-			make_old(i);
+			make_old(i, inew, iold);
 		}
         if(c1==5 && c2==5) 
 			break;
     }
     
-    for(j=0;j<epochs;j++){
-        for(i=0; i<number_of_instances; i++) {
+    for(int j=0;j<epochs;j++){
+        for(unsigned long i=0; i<number_of_instances; i++) {
             if(inew.size()==0) 
 				break; // nothing more to select
-            selected=select(sv);            // selection strategy, select new point
+            selected = select(sv);            // selection strategy, select new point
             
-            t1=lasvm_process(sv,selected, static_cast<double> (Y[selected]) );
+            n_process=lasvm_process(sv,selected, static_cast<double> (Y[selected]) );
             
             if (deltamax<=1000){ // potentially multiple calls to reprocess..
 
-                t2=lasvm_reprocess(sv,epsilon_gradient);// at least one call to reprocess
+                n_reprocess=lasvm_reprocess(sv,epsilon_gradient);// at least one call to reprocess
                 while (lasvm_get_delta(sv)>deltamax && deltamax<1000)
-                    t2=lasvm_reprocess(sv,epsilon_gradient);
+                    n_reprocess=lasvm_reprocess(sv,epsilon_gradient);
             }
             
             if (verbosity==2){
                 number_of_sv= lasvm_get_l(sv);
-				cout << "number_of_sv=" << number_of_sv << "process=" << t1 << " reprocess=" << t2 << endl;
+				cout << "number_of_sv=" << number_of_sv << "process=" << n_process << " reprocess=" << n_reprocess << endl;
             }
-            else
-                if(verbosity==1)
-                    if( (i%100)==0){
+            else if(verbosity==1){
+                    if( (i%100)==0)
 						cout << ".." << i;
 					}
             
             number_of_sv= lasvm_get_l(sv);
 
-            for(k=0; k< static_cast<unsigned long> (select_size.size() ); k++){ 
+            for(unsigned long k=0; k< static_cast<unsigned long> (select_size.size() ); k++){ 
                 if   ( (termination_type==ITERATIONS && i==select_size[k]) 
                        || (termination_type==SVS && number_of_sv>=select_size[k])
                        || (termination_type==TIME && sw->get_time()>=select_size[k])
@@ -512,23 +473,25 @@ void train_online(char *model_file_name){
                         save_sv = new unsigned long[number_of_sv];
 						lasvm_get_sv(sv,save_sv);
 				
-                        finish(sv, number_of_sv, threshold, alpha); 
-						char* tmp;
+                        finish(sv, number_of_sv, threshold, alpha, svind); 
+						stringstream tmp;
+						tmp.clear();
 
                         timer+=sw->get_time();
                         if(termination_type==TIME){
-                            sprintf(tmp,"%s_%dsecs",model_file_name,i); 
-                           cout << "..[saving model_" << i << " secs]..";
+							tmp << model_file_name << "_" << i << "secs";
+                            cout << "..[saving model_" << i << " secs]..";
                         }
-                        else
-                        {	
+                        else{	
                             cout << "..[saving model_"<< i << " pts]..";
-                            sprintf(tmp,"%s_%dpts",model_file_name,i);  
+							tmp << model_file_name << "_" << i << "pts";
                         }
-                        libsvm_save_model(tmp);  
+                        libsvm_save_model( const_cast<char*>(tmp.str().c_str()) , number_of_sv, svind);  
                         
                         lasvm_init(sv, save_l, save_sv, save_alpha, save_g); 
-                        delete save_alpha; delete save_sv; delete save_g;
+                        delete save_alpha; 
+						delete save_sv;
+						delete save_g;
                         delete sw;
 						sw=new stopwatch;    // reset clock
                     }  
@@ -546,16 +509,15 @@ void train_online(char *model_file_name){
     }
 
     if(saves<2){
-        finish(sv, number_of_sv, threshold, alpha); // if haven't done any intermediate saves, do final save
+        finish(sv, number_of_sv, threshold, alpha, svind); // if haven't done any intermediate saves, do final save
         timer+=sw->get_time();
     }
 
     if(verbosity>0) 
 		cout << endl;
-    number_of_sv = count_svs(); 
     cout << "nSVs=" << number_of_sv << endl;
     cout<< "||w||^2=" << lasvm_get_w2(sv) << endl;
-    cout << "kernel_evaluation_counter=" << kernel_evaluation_counter << endl;
+    cout << "Kernel evaluations =" << kernel_evaluation_counter << endl;
     lasvm_destroy(sv);
     lasvm_kcache_destroy(kcache);
 }
@@ -573,9 +535,11 @@ int main(int argc, char **argv)
 
 	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma);
 
-    train_online(model_file_name);
+	unsigned long *svind;
+
+    train_online(model_file_name, alpha, number_of_sv, svind);
     
-    libsvm_save_model(model_file_name);
+    libsvm_save_model(model_file_name, number_of_sv, svind);
    
 }
 

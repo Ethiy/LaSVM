@@ -6,7 +6,10 @@
 
 #include "../lasvm/vector.hpp"
 
+#define LINEAR  0
+#define POLY    1
 #define RBF     2
+#define SIGMOID 3 
 
 using namespace std;
 
