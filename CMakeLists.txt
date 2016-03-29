@@ -59,6 +59,13 @@ else()
     set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "C:/local/boost_1_60_0/")
     set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "C:/local/boost_1_60_0/lib64-msvc-14.0")
     Find_PACKAGE( Boost )
+    if(Boost_FOUND)
+      INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
+      ADD_DEFINITIONS( "-DHAS_BOOST" )
+    else()
+      set(CMAKE_INCLUDE_PATH ${CMAKE_INCLUDE_PATH} "E:/OussamaENNAFII/3rdParty/boost_1_60_0/boost")
+      set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "E:/OussamaENNAFII/3rdParty/boost_1_60_0/libs")
+    endif()
 endif()
 
 #LaSVM_TOOLS
