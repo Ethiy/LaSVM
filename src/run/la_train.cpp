@@ -1,18 +1,18 @@
-// -*- Mode: c++; c-file-style: "stroustrup"; -*-
-
-using namespace std;
-
-#include <stdio.h>
-#include <vector>
 #include <cmath>
 #include <ctime>
-#include <cstring>
-#include <iostream>
-#include <fstream>
+
+#include <vector>
+#include <map>
+#include <set>
+#include <numeric>
 #include <algorithm>
 
-#include "vector.h"
-#include "lasvm.h"
+#include <iostream>
+#include <fstream>
+
+#include "../lasvm/vector.hpp"
+#include "../lasvm/lasvm.h"
+#include "../io/io.hpp"
 
 #define LINEAR  0
 #define POLY    1
@@ -32,198 +32,190 @@ using namespace std;
 
 const char *kernel_type_table[] = {"linear","polynomial","rbf","sigmoid"};
 
-class stopwatch
-{
+using namespace std;
+
+class stopwatch{
 public:
-    stopwatch() : start(std::clock()){} //start counting time
+    stopwatch() : start(clock()){} //start counting time
     ~stopwatch();
-    double get_time() 
-        {
-            clock_t total = clock()-start;;
-            return double(total)/CLOCKS_PER_SEC;
+    double get_time(){
+            return static_cast<double>(clock()-start)/CLOCKS_PER_SEC;
         };
 private:
     std::clock_t start;
 };
-stopwatch::~stopwatch()
-{
-    clock_t total = clock()-start; //get elapsed time
-    cout<<"Time(secs): "<<double(total)/CLOCKS_PER_SEC<<endl;
-}
-class ID // class to hold split file indices and labels
-{
-public:
-    int x;
-    int y;
-    ID() : x(0), y(0) {}
-    ID(int x1,int y1) : x(x1), y(y1) {}
-};
-// IDs will be sorted by index, not by label.
-bool operator<(const ID& x, const ID& y)
-{
-    return x.x < y.x;
+stopwatch::~stopwatch(){
+    cout << "Time (in secs): "<< stopwatch::get_time() << " selected" <<endl;
 }
 
 
 
 /* Data and model */
-int m=0;                          // training set size
-vector <lasvm_sparsevector_t*> X; // feature vectors
-vector <int> Y;                   // labels
+map<unsigned long, lasvm_sparsevector_t> X; // feature vectors
+map<unsigned long, int> Y;                   // labels
+unsigned long number_of_features = 0;
+unsigned long number_of_instances = 0;
+int is_sparse = 1;
 vector <double> kparam;           // kernel parameters
 vector <double> alpha;            // alpha_i, SV weights
-double b0;                        // threshold
+double threshold;                        // threshold
 
 /* Hyperparameters */
-int kernel_type=RBF;              // LINEAR, POLY, RBF or SIGMOID kernels
+int kernel_type = RBF;              // LINEAR, POLY, RBF or SIGMOID kernels
 double degree=3,kgamma=-1,coef0=0;// kernel params
-int use_b0=1;                     // use threshold via constraint \sum a_i y_i =0
-int selection_type=RANDOM;        // RANDOM, GRADIENT or MARGIN selection strategies
-int optimizer=ONLINE_WITH_FINISHING; // strategy of optimization
+int use_threshold = 1;                     // use threshold via constraint \sum a_i y_i =0
+int selection_type = RANDOM;        // RANDOM, GRADIENT or MARGIN selection strategies
+int optimizer = ONLINE_WITH_FINISHING; // strategy of optimization
 double C=1;                       // C, penalty on errors
 double C_neg=1;                   // C-Weighting for negative examples
 double C_pos=1;                   // C-Weighting for positive examples
 int epochs=1;                     // epochs of online learning
-int candidates=50;				  // number of candidates for "active" selection process
+unsigned long candidates=50;				  // number of candidates for "active" selection process
 double deltamax=1000;			  // tolerance for performing reprocess step, 1000=1 reprocess only
-vector <double> select_size;      // Max number of SVs to take with selection strategy (for early stopping) 
+vector <unsigned long> select_size;      // Max number of SVs to take with selection strategy (for early stopping) 
 vector <double> x_square;         // norms of input vectors, used for RBF
 
 /* Programm behaviour*/
 int verbosity=1;                  // verbosity level, 0=off
 int saves=1;
-char report_file_name[1024];             // filename for the training report
-char split_file_name[1024]="\0";         // filename for the splits
+string report_file_name;             // filename for the training report
+string split_file_name("");         // filename for the splits
 int cache_size=256;                       // 256Mb cache size as default
-double epsgr=1e-3;                       // tolerance on gradients
-long long kcalcs=0;                      // number of kernel evaluations
-int binary_files=0;
-vector <ID> splits;             
-int max_index=0;
+double epsilon_gradient=1e-3;                       // tolerance on gradients
+unsigned long long kernel_evaluation_counter=0;                      // number of kernel evaluations
+int is_binary=0;
+map<unsigned long , int> splits;
 vector <int> iold, inew;		  // sets of old (already seen) points + new (unseen) points
 int termination_type=0;
 
 
 void exit_with_help()
 {
-    fprintf(stdout,
-            "Usage: la_svm [options] training_set_file [model_file]\n"
-            "options:\n"
-            "-B file format : files are stored in the following format:\n"
-            "	0 -- libsvm ascii format (default)\n"
-            "	1 -- binary format\n"
-            "	2 -- split file format\n"
-            "-o optimizer: set the type of optimization (default 1)\n"
-            "	0 -- online \n"
-            "	1 -- online with finishing step \n"
-            "-t kernel_type : set type of kernel function (default 2)\n"
-            "	0 -- linear: u'*v\n"
-            "	1 -- polynomial: (gamma*u'*v + coef0)^degree\n"
-            "	2 -- radial basis function: exp(-gamma*|u-v|^2)\n"
-            "	3 -- sigmoid: tanh(gamma*u'*v + coef0)\n"
-            "-s selection: set the type of selection strategy (default 0)\n"
-            "	0 -- random \n" 
-            "	1 -- gradient-based \n"
-            "	2 -- margin-based \n"  
-            "-T termination: set the type of early stopping strategy (default 0)\n"
-            "	0 -- number of iterations \n" 
-            "	1 -- number of SVs \n"
-            "	2 -- time-based \n"  
-            "-l sample: number of iterations/SVs/seconds to sample for early stopping (default all)\n"
-            " if a list of numbers is given a model file is saved for each element of the set\n"
-            "-C candidates : set number of candidates to search for selection strategy (default 50)\n" 
-            "-d degree : set degree in kernel function (default 3)\n"
-            "-g gamma : set gamma in kernel function (default 1/k)\n"
-            "-r coef0 : set coef0 in kernel function (default 0)\n"
-            "-c cost : set the parameter C of C-SVC\n"
-            "-m cachesize : set cache memory size in MB (default 256)\n"
-            "-wi weight: set the parameter C of class i to weight*C (default 1)\n"
-            "-b bias: use a bias or not i.e. no constraint sum alpha_i y_i =0 (default 1=on)\n"
-            "-e epsilon : set tolerance of termination criterion (default 0.001)\n"
-            "-p epochs : number of epochs to train in online setting (default 1)\n"
-            "-D deltamax : set tolerance for reprocess step, 1000=1 call to reprocess >1000=no calls to reprocess (default 1000)\n" 
-        );
-    exit(1);
+	cout <<
+		"Usage: la_svm [options] training_set_file [model_file]" << endl <<
+		"options:" << endl <<
+		"-B file format : files are stored in the following format:" << endl <<
+		"	0 -- libsvm ascii format (default)" << endl <<
+		"	1 -- binary format" << endl <<
+		"	2 -- split file format" << endl <<
+		"-o optimizer: set the type of optimization (default 1)" << endl <<
+		"	0 -- online " << endl <<
+		"	1 -- online with finishing step " << endl <<
+		"-t kernel_type : set type of kernel function (default 2)" << endl <<
+		"	0 -- linear: u'*v" << endl <<
+		"	1 -- polynomial: (gamma*u'*v + coef0)^degree" << endl <<
+		"	2 -- radial basis function: exp(-gamma*|u-v|^2)" << endl <<
+		"	3 -- sigmoid: tanh(gamma*u'*v + coef0)" << endl <<
+		"-selected selection: set the type of selection strategy (default 0)" << endl <<
+		"	0 -- random " << endl <<
+		"	1 -- gradient-based " << endl <<
+		"	2 -- margin-based " << endl <<
+		"-T termination: set the type of early stopping strategy (default 0)" << endl <<
+		"	0 -- number of iterations " << endl <<
+		"	1 -- number of SVs " << endl <<
+		"	2 -- time-based " << endl <<
+		"-l sample: number of iterations/SVs/seconds to sample for early stopping (default all)" << endl <<
+		" if a list of numbers is given a model file is saved for each element of the set" << endl <<
+		"-C candidates : set number of candidates to search for selection strategy (default 50)" << endl <<
+		"-d degree : set degree in kernel function (default 3)" << endl <<
+		"-g gamma : set gamma in kernel function (default 1/k)" << endl <<
+		"-r coef0 : set coef0 in kernel function (default 0)" << endl <<
+		"-c cost : set the parameter C of C-SVC" << endl <<
+		"-m cachesize : set cache memory size in MB (default 256)" << endl <<
+		"-wi weight: set the parameter C of class i to weight*C (default 1)" << endl <<
+		"-b bias: use a bias or not i.e. no constraint sum alpha_i y_i =0 (default 1=on)" << endl <<
+		"-e epsilon : set tolerance of termination criterion (default 0.001)" << endl <<
+		"-p epochs : number of epochs to train in online setting (default 1)" << endl <<
+		"-D deltamax : set tolerance for reprocess step, 1000=1 call to reprocess >1000=no calls to reprocess (default 1000)" << endl;
+    exit( EXIT_FAILURE );
 }
 
 
 void parse_command_line(int argc, char **argv, char *input_file_name, char *model_file_name)
 {
-    int i; int clss; double weight;
+    int i= 0;
+	int clss = 0; 
+	double weight = 0;
     
     // parse options
-    for(i=1;i<argc;i++) 
-    {
-        if(argv[i][0] != '-') break;
+    for(i=1;i<argc;i++){
+
+        if(argv[i][0] != '-') 
+			break;
         ++i;
-        switch(argv[i-1][1])
-        {
-        case 'o':
-            optimizer = atoi(argv[i]);
-            break;
-        case 't':
-            kernel_type = atoi(argv[i]);
-            break;
-        case 's':
-            selection_type = atoi(argv[i]);
-            break;
-        case 'l':
-            while(1)
-            {
-                select_size.push_back(atof(argv[i]));
-                ++i; if((argv[i][0]<'0') || (argv[i][0]>'9')) break; 
-            }
-            i--;
-            break;
-        case 'd':
-            degree = atof(argv[i]);
-            break;
-        case 'g':
-            kgamma = atof(argv[i]);
-            break;
-        case 'r':
-            coef0 = atof(argv[i]);
-            break;
-        case 'm':
-            cache_size = (int) atof(argv[i]);
-            break;
-        case 'c':
-            C = atof(argv[i]);
-            break;
-        case 'w':
-            clss= atoi(&argv[i-1][2]);
-            weight = atof(argv[i]);
-            if (clss>=1) C_pos=weight; else C_neg=weight;
-            break;
-        case 'b':
-            use_b0=atoi(argv[i]);
-            break;
-        case 'B':
-            binary_files=atoi(argv[i]);
-            break;
-        case 'e':
-            epsgr = atof(argv[i]);
-            break;
-        case 'p':
-            epochs = atoi(argv[i]);
-            break;
-        case 'D':
-            deltamax = atoi(argv[i]);
-            break;
-        case 'C':
-            candidates = atoi(argv[i]);
-            break;
-        case 'T':
-            termination_type = atoi(argv[i]);
-            break;
-        default:
-            fprintf(stderr,"unknown option\n");
-            exit_with_help();
+        switch(argv[i-1][1]){
+
+			case 'o':
+				optimizer = stoi(argv[i]);
+				break;
+			case 't':
+				kernel_type = stoi(argv[i]);
+				break;
+			case 's':
+				selection_type = stoi(argv[i]);
+				break;
+			case 'l':
+				while (1){
+					select_size.push_back(stoul(argv[i]));
+					++i;
+					if ( (argv[i][0]<'0') || (argv[i][0]>'9') ) 
+						break;
+				}
+				i--;
+				break;
+			case 'd':
+				degree = stod(argv[i]);
+				break;
+			case 'g':
+				kgamma = stod(argv[i]);
+				break;
+			case 'r':
+				coef0 = stod(argv[i]);
+				break;
+			case 'm':
+				cache_size = static_cast<int>( stod(argv[i]) );
+				break;
+			case 'c':
+				C = stod(argv[i]);
+				break;
+			case 'w':
+				clss = stoi(&argv[i - 1][2]);
+				weight = stod(argv[i]);
+				if (clss >= 1) 
+					C_pos = weight; 
+				else 
+					C_neg = weight;
+				break;
+			case 'b':
+				use_threshold = stoi(argv[i]);
+				break;
+			case 'B':
+				is_binary = stoi(argv[i]);
+				break;
+			case 'e':
+				epsilon_gradient = stod(argv[i]);
+				break;
+			case 'p':
+				epochs = stoi(argv[i]);
+				break;
+			case 'D':
+				deltamax = stod(argv[i]);
+				break;
+			case 'C':
+				candidates = stoi(argv[i]);
+				break;
+			case 'T':
+				termination_type = stoi(argv[i]);
+				break;
+			default:
+				cerr << "Unknown option" << endl;
+				exit_with_help();
         }
     }
 
     saves=select_size.size(); 
-    if(saves==0) select_size.push_back(100000000);
+    if(saves==0) 
+		select_size.push_back(100000000);
 
     // determine filenames
 
@@ -234,367 +226,64 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 
     if(i<argc-1)
         strcpy(model_file_name,argv[i+1]);
-    else
-    {
+    else{
         char *p = strrchr(argv[i],'/');
         if(p==NULL)
             p = argv[i];
         else
             ++p;
-        sprintf(model_file_name,"%s.model",p);
+		sprintf(model_file_name, "%selected.model", p);
     }
 
 }
 
 
-
-
-
-int split_file_load(char *f)
-{
-    int binary_file=0,labs=0,inds=0;
-    FILE *fp;
-    fp=fopen(f,"r"); 
-    if(fp==NULL) {printf("[couldn't load split file: %s]\n",f); exit(1);}
-    char dummy[100],dummy2[100];
-    unsigned int i,j=0; for(i=0;i<strlen(f);i++) if(f[i]=='/') j=i+1;
-    fscanf(fp,"%s %s",dummy,dummy2);
-    strcpy(&(f[j]),dummy2);
-    fscanf(fp,"%s %d",dummy,&binary_file);
-    fscanf(fp,"%s %d",dummy,&inds);
-    fscanf(fp,"%s %d",dummy,&labs);
-    printf("[split file: load:%s binary:%d new_indices:%d new_labels:%d]\n",dummy2,binary_file,inds,labs);
-    //printf("[split file:%s binary=%d]\n",dummy2,binary_file);
-    if(!inds) return binary_file;
-    while(1)
-    {
-        int i,j;
-        int c=fscanf(fp,"%d",&i);
-        if(labs) c=fscanf(fp,"%d",&j);
-        if(c==-1) break;
-        if (labs) 
-            splits.push_back(ID(i-1,j)); 
-        else 
-            splits.push_back(ID(i-1,0));
-    }
-
-    sort(splits.begin(),splits.end());
-	
-    return binary_file;
-}
-
-
-int libsvm_load_data(char *filename)
-// loads the same format as LIBSVM
-{
-    int index; double value;
-    int elements, i;
-    FILE *fp = fopen(filename,"r");
-    lasvm_sparsevector_t* v;
-
-    if(fp == NULL)
-    {
-        fprintf(stderr,"Can't open input file \"%s\"\n",filename);
-        exit(1);
-    }
-    else
-        printf("loading \"%s\"..  \n",filename);
-    int splitpos=0;
-
-    int msz = 0; 
-    elements = 0;
-    while(1)
-    {
-        int c = fgetc(fp);
-        switch(c)
-        {
-        case '\n':
-            if(splits.size()>0) 
-            {
-                if(splitpos<(int)splits.size() && splits[splitpos].x==msz)
-                {
-                    v=lasvm_sparsevector_create();
-                    X.push_back(v);	splitpos++;
-                }
-            }
-            else
-            {
-                v=lasvm_sparsevector_create();
-                X.push_back(v); 
-            }
-            ++msz;
-            //printf("%d\n",m);
-            elements=0;
-            break;
-        case ':':
-            ++elements;
-            break;
-        case EOF:
-            goto out;
-        default:
-            ;
-        }
-    }
- out:
-    rewind(fp);
-
-
-    max_index = 0;splitpos=0;
-    for(i=0;i<msz;i++)
-    {
-
-        int write=0;
-        if(splits.size()>0)
-        {
-            if(splitpos<(int)splits.size() && splits[splitpos].x==i)
-            {
-                write=2;splitpos++;
-            }
-        }
-        else
-            write=1; 
-
-        int label;
-        fscanf(fp,"%d",&label);
-        //	printf("%d %d\n",i,label);
-        if(write) 
-        {
-            if(splits.size()>0)
-            {  
-                if(splits[splitpos-1].y!=0)
-                    Y.push_back(splits[splitpos-1].y);
-                else
-                    Y.push_back(label);
-            }
-            else
-                Y.push_back(label);
-        }
-			
-        while(1)
-        {
-            int c;
-            do {
-                c = getc(fp);
-                if(c=='\n') goto out2;
-            } while(isspace(c));
-            ungetc(c,fp);
-            fscanf(fp,"%d:%lf",&index,&value);
-			
-            if (write==1) lasvm_sparsevector_set(X[m+i],index,value);
-            if (write==2) lasvm_sparsevector_set(X[splitpos-1],index,value);
-            if (index>max_index) max_index=index;
-        }
-    out2:
-        label=1; // dummy
-    }
-
-    fclose(fp);
-
-    msz=X.size()-m;
-    printf("examples: %d   features: %d\n",msz,max_index);
-
-    return msz;
-}
-
-int binary_load_data(char *filename)
-{
-    int msz,i=0,j;
-    lasvm_sparsevector_t* v;
-    int nonsparse=0;
-
-    ifstream f;
-    f.open(filename,ios::in|ios::binary);
-    
-    // read number of examples and number of features
-    int sz[2]; 
-    f.read((char*)sz,2*sizeof(int));
-    if (!f) { printf("File writing error in line %d.\n",i); exit(1);}
-    msz=sz[0]; max_index=sz[1];
-
-    vector <float> val;
-    vector <int>   ind;
-    val.resize(max_index);
-    if(max_index>0) nonsparse=1;
-    int splitpos=0;
-
-    for(i=0;i<msz;i++) 
-    {
-        int mwrite=0;
-        if(splits.size()>0)
-        {
-            if(splitpos<(int)splits.size() && splits[splitpos].x==i) 
-            { 
-                mwrite=1;splitpos++;
-                v=lasvm_sparsevector_create(); X.push_back(v);
-            }
-        }
-        else
-        { 
-            mwrite=1;
-            v=lasvm_sparsevector_create(); X.push_back(v);
-        }
-		
-        if(nonsparse) // non-sparse binary file
-        {
-            f.read((char*)sz,1*sizeof(int)); // get label
-            if(mwrite) 
-            {
-                if(splits.size()>0 && splits[splitpos-1].y!=0)
-                    Y.push_back(splits[splitpos-1].y);
-                else
-                    Y.push_back(sz[0]);
-            }
-            f.read((char*)(&val[0]),max_index*sizeof(float));
-            if(mwrite)
-                for(j=0;j<max_index;j++) // set features for each example
-                    lasvm_sparsevector_set(v,j,val[j]);
-        }
-        else			// sparse binary file
-        {
-            f.read((char*)sz,2*sizeof(int)); // get label & sparsity of example i
-            if(mwrite) 
-            {
-                if(splits.size()>0 && splits[splitpos-1].y!=0)
-                    Y.push_back(splits[splitpos-1].y);
-                else
-                    Y.push_back(sz[0]);
-            }
-            val.resize(sz[1]); ind.resize(sz[1]);
-            f.read((char*)(&ind[0]),sz[1]*sizeof(int));
-            f.read((char*)(&val[0]),sz[1]*sizeof(float));
-            if(mwrite)
-                for(j=0;j<sz[1];j++) // set features for each example
-                {
-                    lasvm_sparsevector_set(v,ind[j],val[j]);
-                    //printf("%d=%g\n",ind[j],val[j]);
-                    if(ind[j]>max_index) max_index=ind[j];
-                }
-        }		
-    }
-    f.close();
-
-    msz=X.size()-m;
-    printf("examples: %d   features: %d\n",msz,max_index);
-
-    return msz;
-}
-
-
-void load_data_file(char *filename)
-{
-    int msz,i,ft;
-    splits.resize(0); 
-
-    int bin=binary_files;
-    if(bin==0) // if ascii, check if it isn't a split file..
-    {
-        FILE *f=fopen(filename,"r");
-        if(f == NULL)
-        {
-            fprintf(stderr,"Can't open input file \"%s\"\n",filename);
-            exit(1);
-        }
-        char c; fscanf(f,"%c",&c); 
-        if(c=='f') bin=2; // found split file!
-    }
-
-    switch(bin)  // load diferent file formats
-    {
-    case 0: // libsvm format
-        msz=libsvm_load_data(filename); break;
-    case 1: 
-        msz=binary_load_data(filename); break;
-    case 2:
-        ft=split_file_load(filename);
-        if(ft==0) 	 
-        {msz=libsvm_load_data(filename); break;} 
-        else
-        {msz=binary_load_data(filename); break;}
-    default:
-        fprintf(stderr,"Illegal file type '-B %d'\n",bin);
-        exit(1);
-    }
-
-    if(kernel_type==RBF)
-    {
-        x_square.resize(m+msz);
-        for(i=0;i<msz;i++)
-            x_square[i+m]=lasvm_sparsevector_dot_product(X[i+m],X[i+m]);
-    }
-
-    if(kgamma==-1)
-        kgamma=1.0/ ((double) max_index); // same default as LIBSVM
-
-    m+=msz;
-}
-
-
-int sv1,sv2; double max_alpha,alpha_tol;
-
-int count_svs()
-{
-    int i; 
-    max_alpha=0; 
-    sv1=0;sv2=0;
-    
-    for(i=0;i<m;i++) 	// Count svs..   
-    {
-        if(alpha[i]>max_alpha) max_alpha=alpha[i];
-        if(-alpha[i]>max_alpha) max_alpha=-alpha[i];
-    }
+unsigned long count_svs(vector<double> alpha, unsigned long& sv_positif, 
+						unsigned long& sv_negatif, double& max_alpha, double& alpha_tolerance){
+	max_alpha = max<double>( -*(min_element(alpha.begin(),alpha.end())) , *(max_element(alpha.begin(),alpha.end())) );
        
-    alpha_tol=max_alpha/1000.0;
-    
-    for(i=0;i<m;i++) 
-    {
-        if(Y[i]>0) 
-        {
-            if(alpha[i] >= alpha_tol) sv1++; 
-        }
-        else    
-        {
-            if(-alpha[i] >= alpha_tol) sv2++; 
-        }            
-    }
-    return sv1+sv2;
+    alpha_tolerance = max_alpha/1000.0;
+	vector <double> tmp;
+	remove_copy_if(alpha.begin(), alpha.end(), tmp.begin(), [](const int& x) {
+		return x > 10;);
+	sv_positif = distance(alpha.upper_bound(alpha_tolerance), alpha.end());
+	sv_negatif = distance(alpha.lower_bound(-alpha_tolerance), alpha.begin());
+
+    return sv_positif + sv_negatif;
 }
 
 
-int libsvm_save_model(const char *model_file_name)
+int libsvm_save_model(const char *model_file_name, vector<double> alpha){
     // saves the model in the same format as LIBSVM
-{
-    FILE *fp = fopen(model_file_name,"w");
-    if(fp==NULL) return -1;
+	ofstream model;
+	model.open(model_file_name);
+
+	unsigned long  sv_positif(0), sv_negatif(0);
+	double max_alpha(0), alpha_tolerance(0);
+
+	if (model.is_open()) {
+		unsigned long number_of_sv = count_svs(alpha, sv_positif, sv_negatif, max_alpha, alpha_tolerance);
+		model << "svm_type c_svc" << endl;
+		model << "kernel_type" << kernel_type_table[kernel_type] << endl;
+		if (kernel_type == POLY)
+			model << "degree" << degree << endl;
+
+		if (kernel_type == POLY || kernel_type == RBF || kernel_type == SIGMOID)
+			model << "gamma" << kgamma << endl;
+
+		if (kernel_type == POLY || kernel_type == SIGMOID)
+			model << "coef0" << coef0;
+
+		model << "nr_class" << 2 << endl;
+		model << "total_sv" << number_of_sv << endl;
+		model << "rho" << threshold << endl;
+		model << "label " << 1 << " " << -1 << endl;
+		model << "nr_sv " << sv_positif << " " << sv_negatif << endl;
+		model << "SV:" << endl;
+	}
+	else
+		return -1;
 	
-    count_svs();
-
-    // printf("nSV=%d\n",sv1+sv2);
-
-    fprintf(fp,"svm_type c_svc\n");
-    fprintf(fp,"kernel_type %s\n", kernel_type_table[kernel_type]);
-
-    if(kernel_type == POLY)
-        fprintf(fp,"degree %g\n", degree);
-
-    if(kernel_type == POLY || kernel_type == RBF || kernel_type == SIGMOID)
-        fprintf(fp,"gamma %g\n", kgamma);
-
-    if(kernel_type == POLY || kernel_type == SIGMOID)
-        fprintf(fp,"coef0 %g\n", coef0);
-
-    fprintf(fp, "nr_class %d\n",2);
-    fprintf(fp, "total_sv %d\n",sv1+sv2);
-	
-    {
-        fprintf(fp, "rho %g\n",b0);
-    }
-	
-    fprintf(fp, "label 1 -1\n");
-    fprintf(fp, "nr_sv");
-    fprintf(fp," %d %d",sv1,sv2);
-    fprintf(fp, "\n");
-    fprintf(fp, "SV\n");
-
     for(int j=0;j<2;j++)
         for(int i=0;i<m;i++)
         {
@@ -617,54 +306,50 @@ int libsvm_save_model(const char *model_file_name)
     return 0;
 }
 
-double kernel(int i, int j, void *kparam)
-{
-    double dot;
-    kcalcs++;
-    dot=lasvm_sparsevector_dot_product(X[i],X[j]);
+double kernel(int i, int j, void *kparam){
+    double dot_product = lasvm_sparsevector_dot_product(X[i], X[j]);
+    kernel_evaluation_counter++;
     
     // sparse, linear kernel
-    switch(kernel_type)
-    {
-    case LINEAR:
-        return dot;
-    case POLY:
-        return pow(kgamma*dot+coef0,degree);
-    case RBF:
-        return exp(-kgamma*(x_square[i]+x_square[j]-2*dot));    
-    case SIGMOID:
-        return tanh(kgamma*dot+coef0);    
+    switch(kernel_type){
+		case LINEAR:
+			return dot_product;
+		case POLY:
+			return pow(kgamma*dot_product+coef0,degree);
+		case RBF:
+			return exp(-kgamma*(x_square[i]+x_square[j]-2*dot_product));    
+		case SIGMOID:
+			return tanh(kgamma*dot_product+coef0);    
     }
     return 0;
 } 
   
 
 
-void finish(lasvm_t *sv)
-{
-    int i,l; 
+void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<double>& alpha){
+	unsigned long i;
 
-    if (optimizer==ONLINE_WITH_FINISHING)
-    {
-        fprintf(stdout,"..[finishing]");
-     
-        int iter=0;
+    if (optimizer==ONLINE_WITH_FINISHING){
+		cout << "..[finishing]";
+        unsigned long iter=0;
 
         do { 
-            iter += lasvm_finish(sv, epsgr); 
-        } while (lasvm_get_delta(sv)>epsgr);
+            iter += lasvm_finish(sv, epsilon_gradient); 
+        } while (lasvm_get_delta(sv)>epsilon_gradient);
 
     }
 
-    l=(int) lasvm_get_l(sv);
-    int *svind,svs; svind= new int[l];
-    svs=lasvm_get_sv(sv,svind); 
-    alpha.resize(m);
-    for(i=0;i<m;i++) alpha[i]=0;
-    double *svalpha; svalpha=new double[l];
+    number_of_sv= lasvm_get_l(sv);
+    unsigned long svs;
+	unsigned long *svind = new  unsigned long[number_of_sv];
+    svs = lasvm_get_sv(sv,svind); 
+	fill(alpha.begin(), alpha.end(), 0);
+
+    double *svalpha = new double[number_of_sv];
     lasvm_get_alpha(sv,svalpha); 
-    for(i=0;i<svs;i++) alpha[svind[i]]=svalpha[i];
-    b0=lasvm_get_b(sv);
+    for(i=0;i<svs;i++) 
+		alpha[svind[i]]=svalpha[i];
+    threshold=lasvm_get_b(sv);
 }
 
 
@@ -687,185 +372,190 @@ void make_old(int val)
 }
 
 
-int select(lasvm_t *sv) // selection strategy
-{
-    int s=-1;
-    int t,i,r,j;
-    double tmp,best; int ind=-1;
+unsigned long select(lasvm_t *sv){ // selection strategy
+    unsigned long selected=0;
+    unsigned long t,i,r,j;
+    double tmp,best;
+	unsigned long ind=0;
 
-    switch(selection_type)
-    {
-    case RANDOM:   // pick a random candidate
-        s=rand() % inew.size();
-        break;
+    switch(selection_type){
+		case RANDOM:   // pick a random candidate
+			selected=rand() % inew.size();
+			break;
 
-    case GRADIENT: // pick best gradient from 50 candidates
-        j=candidates; if((int)inew.size()<j) j=inew.size();
-        r=rand() % inew.size();
-        s=r;
-        best=1e20;
-        for(i=0;i<j;i++)
-        {
-            r=inew[s];
-            tmp=lasvm_predict(sv, r);  
-            tmp*=Y[r];
-            //printf("%d: example %d   grad=%g\n",i,r,tmp);
-            if(tmp<best) {best=tmp;ind=s;}
-            s=rand() % inew.size();
-        }  
-        s=ind;
-        break;
+		case GRADIENT: // pick best gradient from 50 candidates
+			j=candidates; 
+			if(inew.size()<j) 
+				j=inew.size();
+			r=rand() % inew.size();
+			selected=r;
+			best=1e20;
+			for(i=0;i<j;i++){
+				r=inew[selected];
+				tmp=lasvm_predict(sv, r);  
+				if(tmp<best) {
+					best=tmp;
+					ind=selected;
+				}
+				selected=rand() % inew.size();
+			}  
+			selected=ind;
+			break;
 
-    case MARGIN:  // pick closest to margin from 50 candidates
-        j=candidates; if((int)inew.size()<j) j=inew.size();
-        r=rand() % inew.size();
-        s=r;
-        best=1e20;
-        for(i=0;i<j;i++)
-        {
-            r=inew[s];
-            tmp=lasvm_predict(sv, r);  
-            if (tmp<0) tmp=-tmp; 
-            //printf("%d: example %d   grad=%g\n",i,r,tmp);
-            if(tmp<best) {best=tmp;ind=s;}
-            s=rand() % inew.size();
-        }  
-        s=ind;
-        break;
+		case MARGIN:  // pick closest to margin from 50 candidates
+			j=candidates;
+			if(inew.size()<j) 
+				j=inew.size();
+			r=rand() % inew.size();
+			selected=r;
+			best=1e20;
+			for(i=0;i<j;i++){
+				r=inew[selected];
+				tmp=lasvm_predict(sv, r);  
+				if (tmp<0) 
+					tmp=-tmp; 
+				if(tmp<best) {
+					best=tmp;
+					ind=selected;
+				}
+				selected=rand() % inew.size();
+			}  
+			selected=ind;
+			break;
     }
 	
-    t=inew[s]; 
-    inew[s]=inew[inew.size()-1];
+    t=inew[selected]; 
+    inew[selected]=inew[inew.size()-1];
     inew.pop_back();
     iold.push_back(t);
-	
-    //printf("(%d %d)\n",iold.size(),inew.size());
 
     return t;
 }
 
 
-void train_online(char *model_file_name)
-{
-    int t1,t2=0,i,s,l,j,k;
+void train_online(char *model_file_name){
+    unsigned long t1,t2=0,i,selected,number_of_sv,j,k;
     double timer=0;
     stopwatch *sw; // start measuring time after loading is finished
     sw=new stopwatch;    // save timing information
-    char t[1000];
+    char* t;
     strcpy(t,model_file_name);
     strcat(t,".time");
     
     lasvm_kcache_t *kcache=lasvm_kcache_create(kernel, NULL);
     lasvm_kcache_set_maximum_size(kcache, cache_size*1024*1024);
-    lasvm_t *sv=lasvm_create(kcache,use_b0,C*C_pos,C*C_neg);
-    printf("set cache size %d\n",cache_size);
+    lasvm_t *sv=lasvm_create(kcache,use_threshold,C*C_pos,C*C_neg);
+	cout << "set cache size " << cache_size << endl;
 
     // everything is new when we start
-    for(i=0;i<m;i++) inew.push_back(i);
+	iota(inew.begin(), inew.begin() + number_of_instances, 0);
     
     // first add 5 examples of each class, just to balance the initial set
     int c1=0,c2=0;
-    for(i=0;i<m;i++)
-    {
-        if(Y[i]==1 && c1<5) {lasvm_process(sv,i,(double) Y[i]); c1++; make_old(i);}
-        if(Y[i]==-1 && c2<5){lasvm_process(sv,i,(double) Y[i]); c2++; make_old(i);}
-        if(c1==5 && c2==5) break;
+    for(i=0; i<number_of_instances; i++){
+        if(Y[i]==1 && c1<5) {
+			lasvm_process(sv,i,static_cast<double>(Y[i]) ); 
+			c1++; 
+			make_old(i);
+		}
+        if(Y[i]==-1 && c2<5){
+			lasvm_process(sv,i, static_cast<double>(Y[i]) );
+			c2++; 
+			make_old(i);
+		}
+        if(c1==5 && c2==5) 
+			break;
     }
     
-    for(j=0;j<epochs;j++)
-    {
-        for(i=0;i<m;i++)
-        {
-            if(inew.size()==0) break; // nothing more to select
-            s=select(sv);            // selection strategy, select new point
+    for(j=0;j<epochs;j++){
+        for(i=0; i<number_of_instances; i++) {
+            if(inew.size()==0) 
+				break; // nothing more to select
+            selected=select(sv);            // selection strategy, select new point
             
-            t1=lasvm_process(sv,s,(double) Y[s]);
+            t1=lasvm_process(sv,selected, static_cast<double> (Y[selected]) );
             
-            if (deltamax<=1000) // potentially multiple calls to reprocess..
-            {
-                //printf("%g %g\n",lasvm_get_delta(sv),deltamax);
-                t2=lasvm_reprocess(sv,epsgr);// at least one call to reprocess
+            if (deltamax<=1000){ // potentially multiple calls to reprocess..
+
+                t2=lasvm_reprocess(sv,epsilon_gradient);// at least one call to reprocess
                 while (lasvm_get_delta(sv)>deltamax && deltamax<1000)
-                {
-                    t2=lasvm_reprocess(sv,epsgr);
-                }
+                    t2=lasvm_reprocess(sv,epsilon_gradient);
             }
             
-            if (verbosity==2) 
-            {
-                l=(int) lasvm_get_l(sv);
-                printf("l=%d process=%d reprocess=%d\n",l,t1,t2);
+            if (verbosity==2){
+                number_of_sv= lasvm_get_l(sv);
+				cout << "number_of_sv=" << number_of_sv << "process=" << t1 << " reprocess=" << t2 << endl;
             }
             else
                 if(verbosity==1)
-                    if( (i%100)==0){ fprintf(stdout, "..%d",i); fflush(stdout); }
+                    if( (i%100)==0){
+						cout << ".." << i;
+					}
             
-            l=(int) lasvm_get_l(sv);
-            for(k=0;k<(int)select_size.size();k++)
-            { 
+            number_of_sv= lasvm_get_l(sv);
+
+            for(k=0; k< static_cast<unsigned long> (select_size.size() ); k++){ 
                 if   ( (termination_type==ITERATIONS && i==select_size[k]) 
-                       || (termination_type==SVS && l>=select_size[k])
+                       || (termination_type==SVS && number_of_sv>=select_size[k])
                        || (termination_type==TIME && sw->get_time()>=select_size[k])
-                    )
-			 
-                {  
-                    if(saves>1) // if there is more than one model to save, give a new name
-                    {
+                    ) {
+
+                    if(saves>1){ // if there is more than one model to save, give a new name
                         // save current version before potential finishing step
-                        int save_l,*save_sv; double *save_g, *save_alpha;
-                        save_l=(int)lasvm_get_l(sv);
-                        save_alpha= new double[l];lasvm_get_alpha(sv,save_alpha);				
-                        save_g= new double[l];lasvm_get_g(sv,save_g);
-                        save_sv= new int[l];lasvm_get_sv(sv,save_sv);
+                        unsigned long save_l,*save_sv; 
+						double *save_g, *save_alpha;
+                        save_l=lasvm_get_l(sv);
+                        save_alpha= new double[number_of_sv];
+						lasvm_get_alpha(sv,save_alpha);				
+                        save_g= new double[number_of_sv];
+						lasvm_get_g(sv,save_g);
+                        save_sv = new unsigned long[number_of_sv];
+						lasvm_get_sv(sv,save_sv);
 				
-                        finish(sv); 
-                        char tmp[1000];
+                        finish(sv, number_of_sv, threshold, alpha); 
+						char* tmp;
 
                         timer+=sw->get_time();
-                        //f << i << " " << count_svs() << " " << kcalcs << " " << timer << endl;
-
-                        if(termination_type==TIME)  
-                        {
+                        if(termination_type==TIME){
                             sprintf(tmp,"%s_%dsecs",model_file_name,i); 
-                            fprintf(stdout,"..[saving model_%d secs]..",i);
+                           cout << "..[saving model_" << i << " secs]..";
                         }
                         else
                         {	
-                            fprintf(stdout,"..[saving model_%d pts]..",i);
+                            cout << "..[saving model_"<< i << " pts]..";
                             sprintf(tmp,"%s_%dpts",model_file_name,i);  
                         }
                         libsvm_save_model(tmp);  
                         
-                        // get back old version
-                        //fprintf(stdout, "[restoring before finish]"); fflush(stdout); 
                         lasvm_init(sv, save_l, save_sv, save_alpha, save_g); 
                         delete save_alpha; delete save_sv; delete save_g;
-                        delete sw; sw=new stopwatch;    // reset clock
+                        delete sw;
+						sw=new stopwatch;    // reset clock
                     }  
                     select_size[k]=select_size[select_size.size()-1];
                     select_size.pop_back();
                 }
             }
-            if(select_size.size()==0) break; // early stopping, all intermediate models saved
+            if(select_size.size()==0) 
+				break; // early stopping, all intermediate models saved
         }
 
-        inew.resize(0);iold.resize(0); // start again for next epoch..
-        for(i=0;i<m;i++) inew.push_back(i);
+        inew.clear();
+		iold.clear(); // start again for next epoch..
+		iota(inew.begin(), inew.begin() + number_of_instances, 0);
     }
 
-    if(saves<2) 
-    {
-        finish(sv); // if haven't done any intermediate saves, do final save
+    if(saves<2){
+        finish(sv, number_of_sv, threshold, alpha); // if haven't done any intermediate saves, do final save
         timer+=sw->get_time();
-        //f << m << " " << count_svs() << " " << kcalcs << " " << timer << endl;
     }
 
-    if(verbosity>0) printf("\n");
-    l=count_svs(); 
-    printf("nSVs=%d\n",l);
-    printf("||w||^2=%g\n",lasvm_get_w2(sv));
-    printf("kcalcs="); cout << kcalcs << endl;
-    //f.close();
+    if(verbosity>0) 
+		cout << endl;
+    number_of_sv = count_svs(); 
+    cout << "nSVs=" << number_of_sv << endl;
+    cout<< "||w||^2=" << lasvm_get_w2(sv) << endl;
+    cout << "kernel_evaluation_counter=" << kernel_evaluation_counter << endl;
     lasvm_destroy(sv);
     lasvm_kcache_destroy(kcache);
 }
@@ -877,11 +567,11 @@ int main(int argc, char **argv)
     printf("la SVM\n");
     printf("______\n");
     
-    char input_file_name[1024];
-    char model_file_name[1024];
+    char* input_file_name;
+    char* model_file_name;
     parse_command_line(argc, argv, input_file_name, model_file_name);
 
-    load_data_file(input_file_name);
+	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma);
 
     train_online(model_file_name);
     
