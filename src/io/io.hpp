@@ -2,22 +2,14 @@
 #define IO_H
 
 #include <map>
+#include <vector>
 
-class ID{ // class to hold split file indices and labels
-public:
-    unsigned long x;
-    int y;
-    ID() : x(0), y(0) {}
-    ID(unsigned long x1,int y1) : x(x1), y(y1) {}
-};
+#include "../lasvm/vector.hpp"
 
-// IDs will be sorted by index, not by label.
-bool operator<(const ID& x, const ID& y){
-    return x.x < y.x;
-}
+#define RBF     2
 
 using namespace std;
 
-map<long , int> split_file_load( char* file_name , int& is_binary_file , int& instance_index_in , int& labels_in );
+void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, lasvm_sparsevector_t>& X, map<unsigned long, int>& Y, vector<double>& x_square, int kernel_type, double& kgamma);
 
 #endif

@@ -15,7 +15,7 @@
 using namespace std;
 
 
-void libsvm_loader(char* file_name, unsigned long& number_of_features, unsigned long& number_of_instances, map<long, lasvm_sparsevector_t>& feature_vectors, map<long, int>& labels) {
+void libsvm_loader(char* file_name, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, lasvm_sparsevector_t>& feature_vectors, map<unsigned long, int>& labels) {
 
 	string buffer_line;
 	number_of_instances = 0;
@@ -24,12 +24,12 @@ void libsvm_loader(char* file_name, unsigned long& number_of_features, unsigned 
 	ifstream libsvm_file;
 	libsvm_file.open(file_name);
 
-	lasvm_sparsevector_t feature_vector;
-	int label = 0;
-
 	if (libsvm_file.is_open()) {
 
 		cout << "[Loading file: " << file_name << "...";
+
+		lasvm_sparsevector_t feature_vector;
+		int label = 0;
 
 		vector<string> features, features_;
 		while (libsvm_file.peek() != EOF) {
@@ -41,7 +41,7 @@ void libsvm_loader(char* file_name, unsigned long& number_of_features, unsigned 
 			features_.clear();
 			boost::split(features, buffer_line, boost::is_any_of("\t "));
 			label = stoi(features[0].c_str());
-			for (long iter = 1; iter < features.size(); iter++) {
+			for (unsigned long iter = 1; iter < features.size(); iter++) {
 				features_.clear();
 				boost::split(features_, features[iter], boost::is_any_of(":") );
 				feature_vector[stol(features_[0])] = stod(features_[1]);
@@ -62,14 +62,14 @@ void libsvm_loader(char* file_name, unsigned long& number_of_features, unsigned 
 	}
 }
 
-void libsvm_saver(char* file_name, map<long, lasvm_sparsevector_t> feature_vectors, map<long, int> labels) {
+void libsvm_saver(char* file_name, map<unsigned long, lasvm_sparsevector_t> feature_vectors, map<unsigned long, int> labels) {
 	ofstream libsvm_file;
 	libsvm_file.open(file_name);
 
 	cout << "[Saving File: ..." << file_name;
 
 	if (libsvm_file.is_open()) {
-		for (long iter = 0; iter < feature_vectors.size(); iter++) {
+		for (unsigned long iter = 0; iter < feature_vectors.size(); iter++) {
 			libsvm_file << labels[iter] << lasvm_sparsevector_print(feature_vectors[iter]);
 		}
 		libsvm_file.close();

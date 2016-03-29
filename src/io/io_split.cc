@@ -1,6 +1,4 @@
 
-#include <cstdlib>
-
 #include <iostream>
 #include <fstream>
 
@@ -8,16 +6,16 @@
 
 #include <boost/algorithm/string.hpp>
 
-#include "io.hpp"
+#include "io_split.hpp"
 
 
 using namespace std;
 
 
-map<long,int> split_file_load( char* split_file_name , int& is_binary_file ){
-    map<long , int> splits;
-    int instance_index_in = 0;
-    int labels_in = 0;
+map<unsigned long,int> split_file_load( char* split_file_name , int& is_binary_file, int& instance_index_in, int& labels_in){
+    map<unsigned long , int> splits;
+    instance_index_in = 0;
+    labels_in = 0;
 
     string buffer_line;
     unsigned long line_num = 0;
@@ -42,19 +40,19 @@ map<long,int> split_file_load( char* split_file_name , int& is_binary_file ){
         getline( split_file , buffer_line );
         strings.clear();
         boost::split(strings , buffer_line , boost::is_any_of("\t "));
-        is_binary_file = atoi( (strings.back()).c_str() );
+        is_binary_file = stoi( (strings.back()).c_str() );
         line_num ++;
 
         getline( split_file , buffer_line );
         strings.clear();
         boost::split(strings , buffer_line , boost::is_any_of("\t "));
-        instance_index_in =  atoi( (strings.back()).c_str() );
+        instance_index_in =  stoi( (strings.back()).c_str() );
         line_num ++;
 
         getline( split_file , buffer_line );
         strings.clear();
         boost::split(strings , buffer_line , boost::is_any_of("\t "));
-        labels_in =  atoi( (strings.back()).c_str() );
+        labels_in =  stoi( (strings.back()).c_str() );
         line_num ++;
 
         cout << "[split file: binary: " << is_binary_file << ", new_indices: " << instance_index_in << ", new_labels:" << labels_in << "]" << endl;
