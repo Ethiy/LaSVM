@@ -28,7 +28,7 @@ void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_fe
 			file.close();
 		}
 		else{
-			cerr << "Can't open input file" << file_name << endl;
+			cerr << "Can't open input file: " << file_name << endl;
 			exit( EXIT_FAILURE );
 		}
 	}

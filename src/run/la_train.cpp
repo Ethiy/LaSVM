@@ -238,7 +238,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
     if(i>=argc)
         exit_with_help();
 
-    strncpy(input_file_name, argv[i], sizeof(input_file_name) );
+    strncpy(input_file_name, argv[i], 1024 );
 
     if(i<argc-1)
         strncpy(model_file_name, argv[i+1], sizeof(model_file_name) );
@@ -538,7 +538,7 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
 
 int main(int argc, char **argv){
 
-	cout << endl << "la SVM" << "______" << endl;
+	cout << endl << "la SVM" << endl << "______" << endl;
 	
 	int is_sparse = 1;
 	double threshold = 0;

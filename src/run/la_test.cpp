@@ -38,14 +38,14 @@ static map<unsigned long, int> splits;
 static int is_binary = 0;
 
 
-void exit_with_help();
+[[noreturn]]void exit_with_help();
 void libsvm_load_model(char* model_file_name, unsigned long& number_of_sv, unsigned long& number_of_features, double& threshold, double& degree,
 	double& kgamma, double& coef0, map<unsigned long, lasvm_sparsevector_t> Xsv, vector<double> xsv_square, vector<double> alpha);
 double kernel(int i, int j, void *kparam);
 void test(char *output_name, unsigned long number_of_instances, unsigned long number_of_sv, vector<double> alpha, map<unsigned long, int> Y, double threshold);
 void parse_command_line(int argc, char **argv, char *input_file_name, char *model_file_name, char *output_file_name);
 
-void exit_with_help(){
+[[noreturn]]void exit_with_help(){
     cout << endl <<
 	    "Usage: la_test [options] test_set_file model_file output_file" << endl <<
 	    "options:" << endl <<
@@ -234,8 +234,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 
 
 
-int main(int argc, char **argv)  
-{
+int main(int argc, char **argv)  {
 	cout << endl << "la test" << endl << "_______" << endl;
     
 	char input_file_name[1024] = {'\0'};
