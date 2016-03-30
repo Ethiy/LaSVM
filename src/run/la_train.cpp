@@ -93,7 +93,8 @@ double kernel(unsigned long i, unsigned long j, void *kparam);
 void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<double>& alpha, unsigned long* svind);
 void make_old(unsigned long val, vector <unsigned long>& inew, vector<unsigned long>& iold);
 unsigned long select(lasvm_t *sv, vector<unsigned long>& inew, vector<unsigned long>& iold);
-void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold, double& threshold);
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, 
+	vector<unsigned long>& iold, double& threshold, map<unsigned long, int> Y, unsigned long number_of_instances);
 unsigned long long llrand();
 
 unsigned long long llrand() {
@@ -407,7 +408,8 @@ unsigned long select(lasvm_t *sv, vector<unsigned long>& inew, vector<unsigned l
 }
 
 
-void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold, double& threshold){
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew,
+				  vector<unsigned long>& iold, double& threshold, map<unsigned long, int> Y, unsigned long number_of_instances){
 	unsigned long n_process(0), n_reprocess(0);
 	unsigned long selected(0);
     double timer=0;
@@ -423,11 +425,20 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
 	cout << "set cache size " << cache_size << endl;
 
     // everything is new when we start
-	iota(inew.begin(), inew.begin() + number_of_instances, 0);
+    inew.resize( number_of_instances );
+	iota(inew.begin(), inew.end(), 0);
+	cout << "initiation inew" << endl;
     
     // first add 5 examples of each class, just to balance the initial set
-    int c1=0,c2=0;
-    for(unsigned long i=0; i<number_of_instances; i++){
+    int c1=0;
+    int c2=0;
+    unsigned long i = 0;
+    cout << c1 << "," << c2 << "," << number_of_instances << endl;
+    for(long p=0; p<number_of_instances; p++)
+        cout << ":";
+
+    for(i=0; i<number_of_instances; i++){
+    	cout << i << ":" ;
         if(Y[i]==1 && c1<5) {
 			lasvm_process(sv,i,static_cast<double>(Y[i]) ); 
 			c1++; 
@@ -441,9 +452,9 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
         if(c1==5 && c2==5) 
 			break;
     }
-    
+    cout << "initialization svm" << endl;
     for(int j=0;j<epochs;j++){
-        for(unsigned long i=0; i<number_of_instances; i++) {
+        for(i=0; i<number_of_instances; i++) {
             if(inew.size()==0) 
 				break; // nothing more to select
             selected = select(sv,inew,iold);            // selection strategy, select new point
@@ -518,7 +529,8 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
 
         inew.clear();
 		iold.clear(); // start again for next epoch..
-		iota(inew.begin(), inew.begin() + number_of_instances, 0);
+		inew.resize( number_of_instances );
+		iota(inew.begin(), inew.end() , 0);
     }
 
     if(saves<2){
@@ -554,7 +566,7 @@ int main(int argc, char **argv){
 	unsigned long number_of_sv = 0;
 	static vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
 
-    train_online(model_file_name, alpha, number_of_sv, svind, inew, iold, threshold);
+    train_online(model_file_name, alpha, number_of_sv, svind, inew, iold, threshold, Y, number_of_instances);
     
     libsvm_save_model(model_file_name, number_of_sv, svind, threshold);
 }

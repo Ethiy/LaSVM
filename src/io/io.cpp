@@ -9,9 +9,17 @@
 #include "io_libsvm.hpp"
 #include "io_binary.hpp"
 
+
+#define LINEAR  0
+#define POLY    1
+#define RBF     2
+#define SIGMOID 3 
+
 using namespace std;
 
-void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, lasvm_sparsevector_t>& X, map<unsigned long, int>& Y, vector<double>& x_square, int kernel_type, double& kgamma, int& is_sparse, map<unsigned long, int> splits){
+void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, 
+					lasvm_sparsevector_t>& X, map<unsigned long, int>& Y, vector<double>& x_square, int kernel_type, double& kgamma, 
+					int& is_sparse, map<unsigned long, int> splits){
 	cout << "[Loading file: " << file_name << endl;
 	splits.clear();
 	x_square.clear();
@@ -35,9 +43,13 @@ void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_fe
 		}
 	}
 
+	cout << "stream closed" << endl;
+
 	switch (is_binary){  // load diferent file formats
 		case 0: // libsvm format
+			cout << "will" << endl;
 			libsvm_loader( file_name,  number_of_features,  number_of_instances,  X, Y);
+			cout << "file loaded" << endl;
 			break;
 		case 1:
 			binary_loader( file_name, is_sparse, number_of_features, number_of_instances,  X, Y);
@@ -57,10 +69,15 @@ void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_fe
 			cerr << "Illegal file type '-B" << is_binary << endl;
 			exit( EXIT_FAILURE );
 	}
+	cout << RBF << endl;
+	if (kernel_type == RBF){
+        x_square.resize(number_of_instances);
+        for(unsigned long i=0;i<number_of_instances;i++)
+            x_square[i]=lasvm_sparsevector_square(X[i]);
+    }
 
-	if (kernel_type == RBF)
-		transform(X.begin(), X.end(), x_square.begin(), [](const pair<unsigned long, lasvm_sparsevector_t>& instance) {return lasvm_sparsevector_square(instance.second); } );
 
-	if (kgamma == -1)
+	cout << kgamma << endl;
+	if (kgamma < 0)
 		kgamma = 1.0 / ( static_cast<double>(number_of_features) ); // same default as LIBSVM
 }
