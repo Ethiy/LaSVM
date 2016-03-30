@@ -53,7 +53,6 @@ stopwatch::~stopwatch(){
 }
 
 
-
 /* Data and model */
 map<unsigned long, lasvm_sparsevector_t> X; // feature vectors
 map<unsigned long, int> Y;                   // labels
@@ -88,8 +87,29 @@ int is_binary=0;
 map<unsigned long , int> splits;
 vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
 int termination_type=0;
-unsigned long number_of_sv = 0;
 
+
+/* Functions' prototypes*/
+
+[[noreturn]]void exit_with_help();
+void parse_command_line(int argc, char **argv, char *input_file_name, char *model_file_name);
+int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, unsigned long *svind);
+double kernel(unsigned long i, unsigned long j, void *kparam);
+void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<double>& alpha, unsigned long* svind);
+void make_old(unsigned long val, vector <unsigned long>& inew, vector<unsigned long>& iold);
+unsigned long select(lasvm_t *sv);
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind);
+unsigned long long llrand();
+
+unsigned long long llrand() {
+	unsigned long long r = 0;
+
+	for (int i = 0; i < 5; ++i) {
+		r = (r << 15) | (rand() & 0x7FFF);
+	}
+
+	return r & 0xFFFFFFFFFFFFFFFFULL;
+}
 
 [[noreturn]]void exit_with_help(){
 	cout <<
@@ -338,14 +358,14 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 
     switch(selection_type){
 		case RANDOM:   // pick a random candidate
-			selected=rand() % inew.size();
+			selected=static_cast<unsigned long>( llrand() % inew.size());
 			break;
 
 		case GRADIENT: // pick best gradient from 50 candidates
 			j=candidates; 
 			if(inew.size()<j) 
 				j=static_cast<unsigned long>( inew.size() );
-			r=rand() % inew.size();
+			r= static_cast<unsigned long> (llrand() % inew.size() );
 			selected=r;
 			best=1e20;
 			for(i=0;i<j;i++){
@@ -355,7 +375,7 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 					best=tmp;
 					ind=selected;
 				}
-				selected=rand() % inew.size();
+				selected=static_cast<unsigned long>(llrand() % inew.size());
 			}  
 			selected=ind;
 			break;
@@ -364,7 +384,7 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 			j=candidates;
 			if(inew.size()<j) 
 				j=static_cast<unsigned long>(inew.size());
-			r=rand() % inew.size();
+			r=static_cast<unsigned long>(llrand() % inew.size());
 			selected=r;
 			best=1e20;
 			for(i=0;i<j;i++){
@@ -376,7 +396,7 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 					best=tmp;
 					ind=selected;
 				}
-				selected=rand() % inew.size();
+				selected=static_cast<unsigned long>(llrand() % inew.size());
 			}  
 			selected=ind;
 			break;
@@ -399,7 +419,7 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
     sw=new stopwatch;    // save timing information
 	char t[1500] = {'\0'};
     strncpy(t ,model_file_name, sizeof t);
-    strncat(t ,".time", sizeof t);
+    strncat(t ,".time", sizeof t - strlen(t) - 1);
     
     lasvm_kcache_t *kcache=lasvm_kcache_create(kernel, NULL);
     lasvm_kcache_set_maximum_size(kcache, cache_size*1024*1024);
@@ -534,10 +554,10 @@ int main(int argc, char **argv)
 
 	unsigned long *svind = nullptr;   // support vector indices
 	vector <double> alpha;            // alpha_i, SV weights
+	unsigned long number_of_sv = 0;
 
     train_online(model_file_name, alpha, number_of_sv, svind);
     
     libsvm_save_model(model_file_name, number_of_sv, svind);
-   
 }
 
