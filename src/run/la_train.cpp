@@ -34,7 +34,7 @@
 #define SVS 1
 #define TIME 2
 
-const char *kernel_type_table[] = {"linear","polynomial","rbf","sigmoid"};
+static const char *kernel_type_table[] = {"linear","polynomial","rbf","sigmoid"};
 
 using namespace std;
 
@@ -52,15 +52,11 @@ stopwatch::~stopwatch(){
     cout << "Time (in secs): "<< stopwatch::get_time() << " selected" <<endl;
 }
 
-
 /* Data and model */
 static map<unsigned long, lasvm_sparsevector_t> X; // feature vectors
 static map<unsigned long, int> Y;                   // labels
 static unsigned long number_of_features = 0;
 static unsigned long number_of_instances = 0;
-static int is_sparse = 1;
-static vector <double> kparam;           // kernel parameters
-static double threshold;                        // threshold
 
 /* Hyperparameters */
 static int kernel_type = RBF;              // LINEAR, POLY, RBF or SIGMOID kernels
@@ -92,12 +88,12 @@ static int termination_type=0;
 
 [[noreturn]]void exit_with_help();
 void parse_command_line(int argc, char **argv, char *input_file_name, char *model_file_name);
-int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, unsigned long *svind);
+int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, unsigned long *svind, double threshold);
 double kernel(unsigned long i, unsigned long j, void *kparam);
 void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<double>& alpha, unsigned long* svind);
 void make_old(unsigned long val, vector <unsigned long>& inew, vector<unsigned long>& iold);
 unsigned long select(lasvm_t *sv, vector<unsigned long>& inew, vector<unsigned long>& iold);
-void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold);
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold, double& threshold);
 unsigned long long llrand();
 
 unsigned long long llrand() {
@@ -258,7 +254,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 }
 
 
-int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, unsigned long *svind){
+int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, unsigned long *svind, double threshold){
     // saves the model in the same format as LIBSVM
 	ofstream model;
 	model.open(model_file_name);
@@ -410,7 +406,7 @@ unsigned long select(lasvm_t *sv, vector<unsigned long>& inew, vector<unsigned l
 }
 
 
-void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold){
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold, double& threshold){
 	unsigned long n_process(0), n_reprocess(0);
 	unsigned long selected(0);
     double timer=0;
@@ -502,7 +498,7 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
                             cout << "..[saving model_"<< i << " pts]..";
 							tmp << model_file_name << "_" << i << "pts";
                         }
-                        libsvm_save_model( const_cast<char*>(tmp.str().c_str()) , number_of_sv, svind);  
+                        libsvm_save_model( const_cast<char*>(tmp.str().c_str()) , number_of_sv, svind, threshold);  
                         
                         lasvm_init(sv, save_l, save_sv, save_alpha, save_g); 
                         delete save_alpha; 
@@ -544,6 +540,10 @@ int main(int argc, char **argv)
     printf("\n");
     printf("la SVM\n");
     printf("______\n");
+
+	
+	 int is_sparse = 1;
+	 double threshold = 0;                        // threshold
     
     char input_file_name[1024] = {'\0'};
     char model_file_name[1024] = {'\0'};
@@ -556,8 +556,8 @@ int main(int argc, char **argv)
 	unsigned long number_of_sv = 0;
 	static vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
 
-    train_online(model_file_name, alpha, number_of_sv, svind, inew, iold);
+    train_online(model_file_name, alpha, number_of_sv, svind, inew, iold, threshold);
     
-    libsvm_save_model(model_file_name, number_of_sv, svind);
+    libsvm_save_model(model_file_name, number_of_sv, svind, threshold);
 }
 
