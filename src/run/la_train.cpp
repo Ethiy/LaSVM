@@ -61,7 +61,6 @@ unsigned long number_of_features = 0;
 unsigned long number_of_instances = 0;
 int is_sparse = 1;
 vector <double> kparam;           // kernel parameters
-vector <double> alpha;            // alpha_i, SV weights
 double threshold;                        // threshold
 
 /* Hyperparameters */
@@ -82,7 +81,6 @@ vector <double> x_square;         // norms of input vectors, used for RBF
 /* Programm behaviour*/
 int verbosity=1;                  // verbosity level, 0=off
 int saves = 1;
-string split_file_name("");         // filename for the splits
 int cache_size=256;                       // 256Mb cache size as default
 double epsilon_gradient=1e-3;                       // tolerance on gradients
 unsigned long long kernel_evaluation_counter=0;                      // number of kernel evaluations
@@ -534,7 +532,8 @@ int main(int argc, char **argv)
 
 	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma);
 
-	unsigned long *svind;
+	unsigned long *svind = nullptr;   // support vector indices
+	vector <double> alpha;            // alpha_i, SV weights
 
     train_online(model_file_name, alpha, number_of_sv, svind);
     
