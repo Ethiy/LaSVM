@@ -54,39 +54,39 @@ stopwatch::~stopwatch(){
 
 
 /* Data and model */
-map<unsigned long, lasvm_sparsevector_t> X; // feature vectors
-map<unsigned long, int> Y;                   // labels
-unsigned long number_of_features = 0;
-unsigned long number_of_instances = 0;
-int is_sparse = 1;
-vector <double> kparam;           // kernel parameters
-double threshold;                        // threshold
+static map<unsigned long, lasvm_sparsevector_t> X; // feature vectors
+static map<unsigned long, int> Y;                   // labels
+static unsigned long number_of_features = 0;
+static unsigned long number_of_instances = 0;
+static int is_sparse = 1;
+static vector <double> kparam;           // kernel parameters
+static double threshold;                        // threshold
 
 /* Hyperparameters */
-int kernel_type = RBF;              // LINEAR, POLY, RBF or SIGMOID kernels
-double degree=3,kgamma=-1,coef0=0;// kernel params
-int use_threshold = 1;                     // use threshold via constraint \sum a_i y_i =0
-int selection_type = RANDOM;        // RANDOM, GRADIENT or MARGIN selection strategies
-int optimizer = ONLINE_WITH_FINISHING; // strategy of optimization
-double C=1;                       // C, penalty on errors
-double C_neg=1;                   // C-Weighting for negative examples
-double C_pos=1;                   // C-Weighting for positive examples
-int epochs=1;                     // epochs of online learning
-unsigned long candidates=50;				  // number of candidates for "active" selection process
-double deltamax=1000;			  // tolerance for performing reprocess step, 1000=1 reprocess only
-vector <unsigned long> select_size;      // Max number of SVs to take with selection strategy (for early stopping) 
-vector <double> x_square;         // norms of input vectors, used for RBF
+static int kernel_type = RBF;              // LINEAR, POLY, RBF or SIGMOID kernels
+static double degree=3,kgamma=-1,coef0=0;// kernel params
+static int use_threshold = 1;                     // use threshold via constraint \sum a_i y_i =0
+static int selection_type = RANDOM;        // RANDOM, GRADIENT or MARGIN selection strategies
+static int optimizer = ONLINE_WITH_FINISHING; // strategy of optimization
+static double C=1;                       // C, penalty on errors
+static double C_neg=1;                   // C-Weighting for negative examples
+static double C_pos=1;                   // C-Weighting for positive examples
+static int epochs=1;                     // epochs of online learning
+static unsigned long candidates=50;				  // number of candidates for "active" selection process
+static double deltamax=1000;			  // tolerance for performing reprocess step, 1000=1 reprocess only
+static vector <unsigned long> select_size;      // Max number of SVs to take with selection strategy (for early stopping) 
+static vector <double> x_square;         // norms of input vectors, used for RBF
 
 /* Programm behaviour*/
-int verbosity=1;                  // verbosity level, 0=off
-int saves = 1;
-int cache_size=256;                       // 256Mb cache size as default
-double epsilon_gradient=1e-3;                       // tolerance on gradients
-unsigned long long kernel_evaluation_counter=0;                      // number of kernel evaluations
-int is_binary=0;
-map<unsigned long , int> splits;
-vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
-int termination_type=0;
+static int verbosity=1;                  // verbosity level, 0=off
+static int saves = 1;
+static int cache_size=256;                       // 256Mb cache size as default
+static double epsilon_gradient=1e-3;                       // tolerance on gradients
+static unsigned long long kernel_evaluation_counter=0;                      // number of kernel evaluations
+static int is_binary=0;
+static map<unsigned long , int> splits;
+static vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
+static int termination_type=0;
 
 
 /* Functions' prototypes*/
@@ -177,7 +177,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 				break;
 			case 'l':
 				while (1){
-					select_size.push_back(stoi(argv[i]));
+					select_size.push_back(stoul(argv[i]));
 					++i;
 					if ( (argv[i][0]<'0') || (argv[i][0]>'9') ) 
 						break;
@@ -223,7 +223,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 				deltamax = stod(argv[i]);
 				break;
 			case 'C':
-				candidates = stoi(argv[i]);
+				candidates = stoul(argv[i]);
 				break;
 			case 'T':
 				termination_type = stoi(argv[i]);
