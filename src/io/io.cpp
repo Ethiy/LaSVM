@@ -11,8 +11,8 @@
 
 using namespace std;
 
-void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, lasvm_sparsevector_t>& X, map<unsigned long, int>& Y, vector<double>& x_square, int kernel_type, double& kgamma, int& is_sparse){
-	map<unsigned long, int> splits;
+void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, lasvm_sparsevector_t>& X, map<unsigned long, int>& Y, vector<double>& x_square, int kernel_type, double& kgamma, int& is_sparse, map<unsigned long, int> splits){
+	cout << "[Loading file: " << file_name << endl;
 	splits.clear();
 	x_square.clear();
 
@@ -21,7 +21,9 @@ void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_fe
 		file.open(file_name);
 		string buffer;
 		if (file.is_open()) {
+			cout << "file stream open" << endl;
 			getline(file, buffer);
+			cout << buffer << endl;
 			char c = buffer.at(0);
 			if (c == 'f') 
 				is_binary = 2;

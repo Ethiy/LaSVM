@@ -247,7 +247,7 @@ int main(int argc, char **argv)  {
 	int is_sparse = 1;
      
 	libsvm_load_model( model_file_name, number_of_sv, number_of_features, threshold, degree, kgamma, coef0, Xsv, xsv_square, alpha);
-	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma, is_sparse);
+	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma, is_sparse, splits);
     
 	test(output_file_name, number_of_instances, number_of_sv, alpha, Y, threshold);
 }

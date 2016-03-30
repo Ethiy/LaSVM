@@ -547,7 +547,7 @@ int main(int argc, char **argv){
     char model_file_name[1024] = {'\0'};
     parse_command_line(argc, argv, input_file_name, model_file_name);
 
-	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma, is_sparse);
+	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma, is_sparse, splits);
 
 	unsigned long *svind = nullptr;   // support vector indices
 	vector <double> alpha;            // alpha_i, SV weights
