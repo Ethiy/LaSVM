@@ -238,17 +238,17 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
     if(i>=argc)
         exit_with_help();
 
-    strncpy(input_file_name, argv[i], sizeof input_file_name );
+    strncpy(input_file_name, argv[i], sizeof(input_file_name) );
 
     if(i<argc-1)
-        strncpy(model_file_name, argv[i+1], sizeof model_file_name );
+        strncpy(model_file_name, argv[i+1], sizeof(model_file_name) );
     else{
         char *p = strrchr(argv[i],'/');
         if(p==NULL)
             p = argv[i];
         else
             ++p;
-		snprintf(model_file_name, sizeof model_file_name, "%s.model", p);
+		snprintf(model_file_name, sizeof(model_file_name) , "%s.model", p);
     }
 
 }
@@ -413,8 +413,8 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
     stopwatch *sw; // start measuring time after loading is finished
     sw=new stopwatch;    // save timing information
 	char t[1500] = {'\0'};
-    strncpy(t ,model_file_name, sizeof t);
-    strncat(t ,".time", sizeof t - strlen(t) - 1);
+    strncpy(t ,model_file_name, sizeof(t) );
+    strncat(t ,".time", sizeof(t) - strlen(t) - 1);
     
     lasvm_kcache_t *kcache=lasvm_kcache_create(kernel, NULL);
     lasvm_kcache_set_maximum_size(kcache, cache_size*1024*1024);
