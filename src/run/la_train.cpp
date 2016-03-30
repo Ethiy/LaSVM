@@ -254,7 +254,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 }
 
 
-int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, unsigned long *svind, double threshold){
+void libsvm_save_model(char *model_file_name, unsigned long number_of_sv, unsigned long *svind, double threshold){
     // saves the model in the same format as LIBSVM
 	ofstream model;
 	model.open(model_file_name);
@@ -273,16 +273,17 @@ int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, u
 
 		model << "Number of classes: " << 2 << endl;
 		model << "Number of support vectors: " << number_of_sv << endl;
-		model << "rho" << threshold << endl;
+		model << "rho = " << threshold << endl;
 		model << "Labels: " << 1 << " " << -1 << endl;
 		model << "SV:" << endl;
 		for (unsigned long iter=0; iter < number_of_sv; iter++)
 			model << Y[svind[iter]] << lasvm_sparsevector_print(X[svind[iter]]);
 		model.close();
-		return 0;
 	}
-	else
-		return -1;
+	else {
+		cerr << "Could not open file:" << model_file_name << endl;
+		exit(EXIT_FAILURE);
+	}
 }
 
 double kernel(unsigned long i, unsigned long j, void *kparam){
@@ -535,15 +536,12 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
 }
 
 
-int main(int argc, char **argv)  
-{
-    printf("\n");
-    printf("la SVM\n");
-    printf("______\n");
+int main(int argc, char **argv){
 
+	cout << endl << "la SVM" << "______" << endl;
 	
-	 int is_sparse = 1;
-	 double threshold = 0;                        // threshold
+	int is_sparse = 1;
+	double threshold = 0;
     
     char input_file_name[1024] = {'\0'};
     char model_file_name[1024] = {'\0'};

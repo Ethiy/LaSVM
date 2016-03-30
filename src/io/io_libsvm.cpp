@@ -44,7 +44,7 @@ void libsvm_loader(char* file_name, unsigned long& number_of_features, unsigned 
 			for (unsigned long iter = 1; iter < features.size(); iter++) {
 				features_.clear();
 				boost::split(features_, features[iter], boost::is_any_of(":") );
-				feature_vector[stol(features_[0])] = stod(features_[1]);
+				feature_vector[stoul(features_[0])] = stod(features_[1]);
 			}
 			if (number_of_features < feature_vector.rbegin()->first)
 				number_of_features = feature_vector.rbegin()->first;
