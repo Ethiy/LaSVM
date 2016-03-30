@@ -225,17 +225,17 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
     if(i>=argc)
         exit_with_help();
 
-    strcpy_s(input_file_name, sizeof input_file_name, argv[i]);
+    strncpy(input_file_name, argv[i], sizeof input_file_name );
 
     if(i<argc-1)
-        strcpy_s(model_file_name, sizeof model_file_name, argv[i+1]);
+        strncpy(model_file_name, argv[i+1], sizeof model_file_name );
     else{
         char *p = strrchr(argv[i],'/');
         if(p==NULL)
             p = argv[i];
         else
             ++p;
-		sprintf_s(model_file_name, sizeof model_file_name, "%s.model", p);
+		snprintf(model_file_name, sizeof model_file_name, "%s.model", p);
     }
 
 }
@@ -399,9 +399,9 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
     double timer=0;
     stopwatch *sw; // start measuring time after loading is finished
     sw=new stopwatch;    // save timing information
-    char t[2000];
-    strcpy_s(t,sizeof t ,model_file_name);
-    strcat_s(t,sizeof t,".time");
+	char t[1500] = {'\0'};
+    strncpy(t ,model_file_name, sizeof t);
+    strncat(t ,".time", sizeof t);
     
     lasvm_kcache_t *kcache=lasvm_kcache_create(kernel, NULL);
     lasvm_kcache_set_maximum_size(kcache, cache_size*1024*1024);
@@ -528,8 +528,8 @@ int main(int argc, char **argv)
     printf("la SVM\n");
     printf("______\n");
     
-    char input_file_name[1024];
-    char model_file_name[1024];
+    char input_file_name[1024] = {'\0'};
+    char model_file_name[1024] = {'\0'};
     parse_command_line(argc, argv, input_file_name, model_file_name);
 
 	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma);
