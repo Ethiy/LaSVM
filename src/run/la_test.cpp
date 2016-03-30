@@ -210,25 +210,25 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
     if(i>=argc)
 		exit_with_help();
 
-	strncpy(input_file_name, argv[i], sizeof(input_file_name));
+	strncpy(input_file_name, argv[i], 1024);
 
     if(i<argc-1)
-		strncpy(model_file_name, argv[i + 1], sizeof(model_file_name));
+		strncpy(model_file_name, argv[i + 1], 1024);
     else{
 		char *p = strrchr(argv[i],'/');
 		if(p==NULL)
 			p = argv[i];
 		else
 			++p;
-		snprintf(model_file_name, sizeof(model_file_name), "%s.model", p);
+		snprintf(model_file_name, 1024 , "%s.model", p);
     }
 
     if(argc<i+3) 
 		exit_with_help();
 
-    strncpy(input_file_name, argv[i], sizeof(input_file_name));
-    strncpy(model_file_name, argv[i+1], sizeof(model_file_name));
-    strncpy(output_file_name, argv[i+2], sizeof(output_file_name));
+    strncpy(input_file_name, argv[i], 1024);
+    strncpy(model_file_name, argv[i+1], 1024);
+    strncpy(output_file_name, argv[i+2], 1024);
 
 }
 
