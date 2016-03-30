@@ -3,10 +3,12 @@
 
 #include <vector>
 #include <map>
-#include <set>
 #include <numeric>
 #include <algorithm>
 
+#include <cstring>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -42,7 +44,7 @@ public:
     ~stopwatch();
     double get_time(){
             return static_cast<double>(clock()-start)/CLOCKS_PER_SEC;
-        };
+        }
 private:
     std::clock_t start;
 };
@@ -91,8 +93,7 @@ int termination_type=0;
 unsigned long number_of_sv = 0;
 
 
-void exit_with_help()
-{
+[[noreturn]]void exit_with_help(){
 	cout <<
 		"Usage: la_svm [options] training_set_file [model_file]" << endl <<
 		"options:" << endl <<

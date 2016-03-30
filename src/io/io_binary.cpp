@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <cmath>
 
 
 #include "../lasvm/vector.hpp"
@@ -49,7 +50,7 @@ void binary_loader(char* file_name, int& is_sparse , unsigned long& number_of_fe
 				binary_file.read(reinterpret_cast<char*>(&indexes[0]), size_of_buffer*sizeof(unsigned long));
 				binary_file.read(reinterpret_cast<char*>(&buffer_vector[0]), size_of_buffer*sizeof(unsigned long));
 				for (attribute = 0; attribute < size_of_buffer; attribute++) {
-					if( abs(buffer_vector[attribute]) > numeric_limits<double>::epsilon() )
+					if( fabs(buffer_vector[attribute]) > numeric_limits<double>::epsilon() )
 						feature_vector[indexes[attribute]] = buffer_vector[attribute];
 					if (indexes[attribute] > number_of_features)
 						number_of_features = indexes[attribute];
@@ -85,9 +86,7 @@ void binary_saver(char* file_name, int is_sparse, map<unsigned long, lasvm_spars
 		int label = 0;
 		vector <double> buffer_vector;
 		vector <unsigned long> indexes;
-		unsigned long attribute = 0;
-		unsigned long size_of_buffer = 0;
-
+        unsigned long size_of_buffer = 0;
 		unsigned long number_of_instances = static_cast<unsigned long>(labels.size());
 		unsigned long number_of_features = 0;
 
