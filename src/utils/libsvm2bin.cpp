@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "../boost_1_60_0/boost/program_options/options_description.hpp"
+#include <boost/program_options.hpp>
 
 #include "../io/io_libsvm.hpp"
 #include "../io/io_binary.hpp"
