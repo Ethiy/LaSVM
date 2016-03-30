@@ -12,10 +12,8 @@
 #include <fstream>
 #include <sstream>
 
-//#include <boost/lexical_cast.hpp>
-
 #include "../lasvm/vector.hpp"
-#include "../lasvm/lasvm.h"
+#include "../lasvm/lasvm.hpp"
 #include "../io/io.hpp"
 
 #define LINEAR  0
@@ -160,7 +158,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 				break;
 			case 'l':
 				while (1){
-					select_size.push_back(stoul(argv[i]));
+					select_size.push_back(stoi(argv[i]));
 					++i;
 					if ( (argv[i][0]<'0') || (argv[i][0]>'9') ) 
 						break;
@@ -217,7 +215,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
         }
     }
 
-    saves=select_size.size(); 
+    saves=static_cast<int>(select_size.size()); 
     if(saves==0) 
 		select_size.push_back(100000000);
 
@@ -226,17 +224,17 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
     if(i>=argc)
         exit_with_help();
 
-    strcpy(input_file_name, argv[i]);
+    strcpy_s(input_file_name, sizeof input_file_name, argv[i]);
 
     if(i<argc-1)
-        strcpy(model_file_name,argv[i+1]);
+        strcpy_s(model_file_name, sizeof model_file_name, argv[i+1]);
     else{
         char *p = strrchr(argv[i],'/');
         if(p==NULL)
             p = argv[i];
         else
             ++p;
-		sprintf(model_file_name, "%selected.model", p);
+		sprintf_s(model_file_name, sizeof model_file_name, "%s.model", p);
     }
 
 }
@@ -264,7 +262,7 @@ int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, u
 		model << "rho" << threshold << endl;
 		model << "Labels: " << 1 << " " << -1 << endl;
 		model << "SV:" << endl;
-		for (unsigned long iter; iter < number_of_sv; iter++)
+		for (unsigned long iter=0; iter < number_of_sv; iter++)
 			model << Y[svind[iter]] << lasvm_sparsevector_print(X[svind[iter]]);
 		model.close();
 		return 0;
@@ -325,7 +323,7 @@ void make_old(unsigned long val, vector <unsigned long>& inew, vector<unsigned l
     // move index <val> from new set into old set
 	vector<unsigned long>::iterator iter = find(inew.begin(), inew.end(), val);
 	if (iter != inew.end() || (iter == inew.end() && *inew.end() == val)) {
-		unsigned long ind = distance(inew.begin(), iter);
+		unsigned long ind = static_cast<unsigned long>( distance(inew.begin(), iter));
 		inew[ind] = inew[inew.size() - 1];
 		inew.pop_back();
 		iold.push_back(val);
@@ -347,7 +345,7 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 		case GRADIENT: // pick best gradient from 50 candidates
 			j=candidates; 
 			if(inew.size()<j) 
-				j=inew.size();
+				j=static_cast<unsigned long>( inew.size() );
 			r=rand() % inew.size();
 			selected=r;
 			best=1e20;
@@ -366,7 +364,7 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 		case MARGIN:  // pick closest to margin from 50 candidates
 			j=candidates;
 			if(inew.size()<j) 
-				j=inew.size();
+				j=static_cast<unsigned long>(inew.size());
 			r=rand() % inew.size();
 			selected=r;
 			best=1e20;
@@ -400,9 +398,9 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
     double timer=0;
     stopwatch *sw; // start measuring time after loading is finished
     sw=new stopwatch;    // save timing information
-    char* t;
-    strcpy(t,model_file_name);
-    strcat(t,".time");
+    char t[2000];
+    strcpy_s(t,sizeof t ,model_file_name);
+    strcat_s(t,sizeof t,".time");
     
     lasvm_kcache_t *kcache=lasvm_kcache_create(kernel, NULL);
     lasvm_kcache_set_maximum_size(kcache, cache_size*1024*1024);
@@ -529,8 +527,8 @@ int main(int argc, char **argv)
     printf("la SVM\n");
     printf("______\n");
     
-    char* input_file_name;
-    char* model_file_name;
+    char input_file_name[1024];
+    char model_file_name[1024];
     parse_command_line(argc, argv, input_file_name, model_file_name);
 
 	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma);
