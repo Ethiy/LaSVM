@@ -2,15 +2,7 @@
 #define MESSAGES_H
 
 
-#include <stdarg.h>
-
-
-#ifdef __cplusplus__
-extern "C" { 
-#if 0
-}
-#endif
-#endif
+#include <cstdarg>
 
 
 /* Message levels */
@@ -62,8 +54,4 @@ extern void lasvm_debug(const char *fmt, ...);
 
 void lasvm_assertfail(const char *file,unsigned long line);
 
-
-#ifdef __cplusplus__
-}
-#endif
 #endif

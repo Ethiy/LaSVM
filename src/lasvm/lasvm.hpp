@@ -1,7 +1,7 @@
 #ifndef LASVM_H
 #define LASVM_H
 
-#include "kcache.h"
+#include "kcache.hpp"
 
 /* --- lasvm_t
    Opaque type representing the LASVM state. 

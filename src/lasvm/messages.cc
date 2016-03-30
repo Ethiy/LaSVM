@@ -1,7 +1,7 @@
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 
-#include "messages.h"
+#include "messages.hpp"
 
 lasvm_message_t lasvm_message_level = LASVM_INFO;
 
@@ -11,11 +11,6 @@ lasvm_message_proc_t  *lasvm_message_proc = 0;
 static void defaultproc(lasvm_message_t level, const char *fmt, va_list ap){
   if (level <= lasvm_message_level)
     vprintf(fmt, ap);
-  if (level <= LASVM_ERROR) // start of ifdef LUSH
-    {
-      extern void run_time_error(const char *s);
-      run_time_error("lasvm error");
-    } // endif LUSH
   if (level <= LASVM_ERROR)
     abort();
 }

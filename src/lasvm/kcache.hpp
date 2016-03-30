@@ -30,14 +30,6 @@
 #ifndef KCACHE_H
 #define KCACHE_H
 
-#ifdef __cplusplus__
-extern "C" { 
-#if 0
-}
-#endif
-#endif
-
-
 /* ------------------------------------- */
 /* GENERIC KERNEL TYPE */
 
@@ -145,8 +137,4 @@ void lasvm_kcache_swap_rr(lasvm_kcache_t *self, unsigned long r1, unsigned long 
 void lasvm_kcache_swap_ii(lasvm_kcache_t *self, unsigned long i1, unsigned long i2);
 void lasvm_kcache_swap_ri(lasvm_kcache_t *self, unsigned long r1, unsigned long i2);
 
-
-#ifdef __cplusplus__
-}
-#endif
 #endif

@@ -1,13 +1,13 @@
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
-#include <float.h>
-#include <math.h>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
+#include <cfloat>
+#include <cmath>
 
-#include "messages.h"
-#include "kcache.h"
-#include "lasvm.h"
+#include "messages.hpp"
+#include "kcache.hpp"
+#include "lasvm.hpp"
 
 #ifndef min
 # define min(a,b) (((a)<(b))?(a):(b))

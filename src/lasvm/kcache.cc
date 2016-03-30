@@ -27,13 +27,13 @@
  * $Id: kcache.c,v 1.4 2005/11/16 00:10:01 agbs Exp $
  **********************************************************************/
 
-#include <stdlib.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstdarg>
+#include <cstdio>
+#include <cstring>
 
-#include "messages.h"
-#include "kcache.h"
+#include "messages.hpp"
+#include "kcache.hpp"
 
 #ifndef max
 # define max(a,b) (((a)>(b))?(a):(b))
