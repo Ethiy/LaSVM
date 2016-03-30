@@ -11,10 +11,9 @@
 
 using namespace std;
 
-void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, lasvm_sparsevector_t>& X, map<unsigned long, int>& Y, vector<double>& x_square, int kernel_type, double& kgamma){
+void load_data_file(char *file_name, int& is_binary, unsigned long& number_of_features, unsigned long& number_of_instances, map<unsigned long, lasvm_sparsevector_t>& X, map<unsigned long, int>& Y, vector<double>& x_square, int kernel_type, double& kgamma, int& is_sparse){
 	map<unsigned long, int> splits;
 	splits.clear();
-	int is_sparse = 1;
 	x_square.clear();
 
 	if (is_binary == 0){ // if ascii, check if it isn't a split file..

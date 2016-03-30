@@ -80,12 +80,11 @@ static vector <double> x_square;         // norms of input vectors, used for RBF
 /* Programm behaviour*/
 static int verbosity=1;                  // verbosity level, 0=off
 static int saves = 1;
-static int cache_size=256;                       // 256Mb cache size as default
+static unsigned long cache_size=256;                       // 256Mb cache size as default
 static double epsilon_gradient=1e-3;                       // tolerance on gradients
 static unsigned long long kernel_evaluation_counter=0;                      // number of kernel evaluations
 static int is_binary=0;
 static map<unsigned long , int> splits;
-static vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
 static int termination_type=0;
 
 
@@ -97,8 +96,8 @@ int libsvm_save_model(const char *model_file_name, unsigned long number_of_sv, u
 double kernel(unsigned long i, unsigned long j, void *kparam);
 void finish(lasvm_t *sv, unsigned long& number_of_sv, double& threshold, vector<double>& alpha, unsigned long* svind);
 void make_old(unsigned long val, vector <unsigned long>& inew, vector<unsigned long>& iold);
-unsigned long select(lasvm_t *sv);
-void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind);
+unsigned long select(lasvm_t *sv, vector<unsigned long>& inew, vector<unsigned long>& iold);
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold);
 unsigned long long llrand();
 
 unsigned long long llrand() {
@@ -194,7 +193,7 @@ void parse_command_line(int argc, char **argv, char *input_file_name, char *mode
 				coef0 = stod(argv[i]);
 				break;
 			case 'm':
-				cache_size = static_cast<int>( stod(argv[i]) );
+				cache_size = stoul(argv[i]);
 				break;
 			case 'c':
 				C = stod(argv[i]);
@@ -350,7 +349,7 @@ void make_old(unsigned long val, vector <unsigned long>& inew, vector<unsigned l
 }
 
 
-unsigned long select(lasvm_t *sv){ // selection strategy
+unsigned long select(lasvm_t *sv, vector<unsigned long>& inew, vector<unsigned long>& iold){ // selection strategy
     unsigned long selected=0;
     unsigned long t,i,r,j;
     double tmp,best;
@@ -411,7 +410,7 @@ unsigned long select(lasvm_t *sv){ // selection strategy
 }
 
 
-void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind){
+void train_online(char *model_file_name, vector<double>& alpha, unsigned long& number_of_sv, unsigned long *svind, vector<unsigned long>& inew, vector<unsigned long>& iold){
 	unsigned long n_process(0), n_reprocess(0);
 	unsigned long selected(0);
     double timer=0;
@@ -450,7 +449,7 @@ void train_online(char *model_file_name, vector<double>& alpha, unsigned long& n
         for(unsigned long i=0; i<number_of_instances; i++) {
             if(inew.size()==0) 
 				break; // nothing more to select
-            selected = select(sv);            // selection strategy, select new point
+            selected = select(sv,inew,iold);            // selection strategy, select new point
             
             n_process=lasvm_process(sv,selected, static_cast<double> (Y[selected]) );
             
@@ -550,13 +549,14 @@ int main(int argc, char **argv)
     char model_file_name[1024] = {'\0'};
     parse_command_line(argc, argv, input_file_name, model_file_name);
 
-	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma);
+	load_data_file(input_file_name, is_binary, number_of_features, number_of_instances, X, Y, x_square, kernel_type, kgamma, is_sparse);
 
 	unsigned long *svind = nullptr;   // support vector indices
 	vector <double> alpha;            // alpha_i, SV weights
 	unsigned long number_of_sv = 0;
+	static vector <unsigned long> iold, inew;		  // sets of old (already seen) points + new (unseen) points
 
-    train_online(model_file_name, alpha, number_of_sv, svind);
+    train_online(model_file_name, alpha, number_of_sv, svind, inew, iold);
     
     libsvm_save_model(model_file_name, number_of_sv, svind);
 }
